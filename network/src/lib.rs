@@ -1,14 +1,10 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+use reqwest;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+#[tokio::main]
+pub async fn get_html_by_url(url: String) -> Result<String, reqwest::Error> {
+    let response = reqwest::get(url)
+        .await?
+        .text()
+        .await?;
+    Ok(response)
 }

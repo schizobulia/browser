@@ -9,8 +9,8 @@ use bean::ui_state::UiState;
 #[derive(Component)]
 struct AnimateTranslation;
 
-pub fn render_document(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_state: ResMut<UiState>) {
-    let html = "<html><body><p>3<span>12</span></p><p>2</p></body></html>";
+pub fn render_document(mut commands: Commands, asset_server: Res<AssetServer>,
+    mut ui_state: ResMut<UiState>, html: String) {
     let root = NodeBundle {
         style: Style {
             top: Val::Px(25.0),
@@ -24,7 +24,7 @@ pub fn render_document(mut commands: Commands, asset_server: Res<AssetServer>, m
         ..default()
     };
     commands.spawn(root).with_children(|parent: &mut ChildBuilder<'_>| {
-        let document = Html::parse_document(html);
+        let document = Html::parse_document(&html);
         let node = traverse_html(document.root_element(), parent, &asset_server);
         ui_state.document = vec![node];
         get_children_by_tag_name("p", &mut ui_state.document).iter_mut().for_each(|a| {

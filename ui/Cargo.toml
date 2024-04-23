@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 renderer = { path = "../renderer" }
 bean = { path = "../bean" }
+network = { path = "../network" }
 bevy_egui = "0.27.0"
 bevy = "0.13.2"

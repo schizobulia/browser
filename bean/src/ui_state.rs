@@ -10,7 +10,7 @@ pub struct UiState {
 impl Default for UiState {
     fn default() -> Self {
         Self {
-            name: "".to_owned(),
+            name: "http://49.232.147.237/test/index.html".to_owned(),
             document: Vec::new()
         }
     }
