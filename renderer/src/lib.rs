@@ -3,14 +3,14 @@ mod component;
 use bevy::{prelude::*};
 // use bevy_egui::EguiContexts;
 use scraper::{ElementRef, Html};
-use bean::node::{Node, ElementData, ElementText, print_node, get_children_by_tag_name};
+use bean::node::{Node, ElementText, get_children_by_tag_name, get_node_by_id};
 use bean::ui_state::UiState;
 
 #[derive(Component)]
 struct AnimateTranslation;
 
 pub fn render_document(mut commands: Commands, asset_server: Res<AssetServer>, mut ui_state: ResMut<UiState>) {
-    let html = "<html><body><p>1</p><p>2</p></body></html>";
+    let html = "<html><body><p>3<span>12</span></p><p>2</p></body></html>";
     let root = NodeBundle {
         style: Style {
             top: Val::Px(25.0),
@@ -28,25 +28,34 @@ pub fn render_document(mut commands: Commands, asset_server: Res<AssetServer>, m
         let node = traverse_html(document.root_element(), parent, &asset_server);
         ui_state.document = vec![node];
         get_children_by_tag_name("p", &mut ui_state.document).iter_mut().for_each(|a| {
-            match &mut a.text {
-                Some(text) => {
-                    text.text = "Hello, world!".to_string();
+            let n = get_node_by_id(&mut ui_state.document, a.clone());
+            match n {
+                Some(node) => {
+                    // match &mut node.text {
+                    //     Some(text) => {
+                    //         text.text = "Hello, world!".to_string();
+                    //     },
+                    //     None => {}
+                    // }
+                    println!("{:?}", node.text);
+                    println!("{:?}", node.children);
                 },
                 None => {}
             }
         });
-        print_node(ui_state.document.get(0).unwrap());
+        // println!("{:?}", ui_state.document);
     });
 }
 
 fn traverse_html(element: ElementRef, commands: &mut ChildBuilder<'_>, asset_server: &Res<AssetServer>) -> Node {
     let tag = element.value().name().to_string();
     let mut children: Vec<Node> = Vec::new();
-    let mut el_data: ElementData = ElementData {
-        id: None,
+    let mut el_data: Node = Node {
+        children: Vec::new(),
         tag_name: tag,
         attributes: Vec::new(),
         text: None,
+        id: None,
     };
     let root = NodeBundle {
         style: Style {
@@ -75,8 +84,9 @@ fn traverse_html(element: ElementRef, commands: &mut ChildBuilder<'_>, asset_ser
             }
         }
     }).id();
+    el_data.children = children;
     el_data.id = Some(id);
-    Node::Element(el_data, children)
+    el_data
 }
 
 pub fn update_document(
