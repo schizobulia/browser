@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "browser",
+    "renderer",
+    "network",
+    "ui",
+    "storage",
+    "security",
+    "plugins",
+    "data_processing",
+    "multimedia_processing",
+    "performance_monitoring",
+    "cache",
+    "js_engine",
+    "bean"
+]
