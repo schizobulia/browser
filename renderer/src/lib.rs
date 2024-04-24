@@ -1,11 +1,13 @@
 mod component;
+mod generate;
 
 use bevy::{prelude::*};
 // use bevy_egui::EguiContexts;
 use scraper::{ElementRef, Html};
-use bean::node::{Node, ElementText, get_children_by_tag_name, get_node_by_id};
+use bean::node::{Node, ElementText};
 use bean::ui_state::UiState;
-
+use js_engine::run_js;
+use generate::NodeResult;
 #[derive(Component)]
 struct AnimateTranslation;
 
@@ -25,26 +27,27 @@ pub fn render_document(mut commands: Commands, asset_server: Res<AssetServer>,
     };
     commands.spawn(root).with_children(|parent: &mut ChildBuilder<'_>| {
         let document = Html::parse_document(&html);
-        let node = traverse_html(document.root_element(), parent, &asset_server);
+        let node: Node = traverse_html(document.root_element(), parent, &asset_server);
         ui_state.document = vec![node];
-        get_children_by_tag_name("p", &mut ui_state.document).iter_mut().for_each(|a| {
-            let n = get_node_by_id(&mut ui_state.document, a.clone());
-            match n {
-                Some(node) => {
-                    // match &mut node.text {
-                    //     Some(text) => {
-                    //         text.text = "Hello, world!".to_string();
-                    //     },
-                    //     None => {}
-                    // }
-                    println!("{:?}", node.text);
-                    println!("{:?}", node.children);
-                },
-                None => {}
-            }
-        });
+        // get_children_by_tag_name("p", &mut ui_state.document).iter_mut().for_each(|a| {
+        //     let n = get_node_by_id(&mut ui_state.document, a.clone());
+        //     match n {
+        //         Some(node) => {
+        //             // match &mut node.text {
+        //             //     Some(text) => {
+        //             //         text.text = "Hello, world!".to_string();
+        //             //     },
+        //             //     None => {}
+        //             // }
+        //             println!("{:?}", node.text);
+        //             println!("{:?}", node.children);
+        //         },
+        //         None => {}
+        //     }
+        // });
         // println!("{:?}", ui_state.document);
     });
+    println!("==========");
 }
 
 fn traverse_html(element: ElementRef, commands: &mut ChildBuilder<'_>, asset_server: &Res<AssetServer>) -> Node {
@@ -57,35 +60,38 @@ fn traverse_html(element: ElementRef, commands: &mut ChildBuilder<'_>, asset_ser
         text: None,
         id: None,
     };
-    let root = NodeBundle {
-        style: Style {
-            width: Val::Percent(100.0),
-            flex_direction: FlexDirection::Column,
-            ..default()
+    let res = generate::get_node_result(element);
+    match res {
+        NodeResult::Script(script) => {
+            run_js(&script);
         },
-        ..default()
-    };
-    let id = commands.spawn(root).with_children(|parent: &mut ChildBuilder<'_>| {
-        for child in element.children() {
-            if let Some(child_element) = ElementRef::wrap(child) {
-                children.push(traverse_html(child_element, parent, asset_server));
-            } else if child.value().is_text() {
-                let text = child.value().as_text().unwrap().to_string();
-                let text_bundle = TextBundle::from_section(
-                    &text,
-                    TextStyle {
-                        font: asset_server.load("fonts/FiraMono-Medium.ttf"),
-                        color: Color::BLACK,
-                        ..default()
-                    },
-                );
-                let childern_id = parent.spawn(text_bundle).id();
-                el_data.text = Some(ElementText { id: Some(childern_id), text });
-            }
+        NodeResult::Style(style) => {
+            println!("{:?}", style);
+        },
+        NodeResult::Div(bundle) => {
+            let id = commands.spawn(bundle).with_children(|parent: &mut ChildBuilder<'_>| {
+                for child in element.children() {
+                    if let Some(child_element) = ElementRef::wrap(child) {
+                        children.push(traverse_html(child_element, parent, asset_server));
+                    } else if child.value().is_text() {
+                        let text = child.value().as_text().unwrap().to_string();
+                        let text_bundle = TextBundle::from_section(
+                            &text,
+                            TextStyle {
+                                font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                                color: Color::BLACK,
+                                ..default()
+                            },
+                        );
+                        let childern_id = parent.spawn(text_bundle).id();
+                        el_data.text = Some(ElementText { id: Some(childern_id), text });
+                    }
+                }
+            }).id();
+            el_data.children = children;
+            el_data.id = Some(id);
         }
-    }).id();
-    el_data.children = children;
-    el_data.id = Some(id);
+    };
     el_data
 }
 
