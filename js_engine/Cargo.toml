@@ -6,4 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rusty_v8 = "0.32.1"
+deno_core = "0.278.0"
+bean = { path = "../bean" }

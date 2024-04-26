@@ -59,7 +59,6 @@ fn update(mut contexts: EguiContexts, mut ui_state: ResMut<UiState>,
                         }
                         i += 1;
                     });
-                    println!("===========");
                     init_render_document(ui_state, commands, asset_server)
                 }
             });
