@@ -1,11 +1,13 @@
 mod component;
 mod generate;
+mod css;
 
 use bevy::prelude::*;
 // use bevy_egui::EguiContexts;
 use bean::node::{ElementText, Node};
 use bean::ui_state::UiState;
 use generate::NodeResult;
+use css::parse_css;
 use js_engine;
 use bean::qaq;
 use scraper::{ElementRef, Html};
@@ -32,8 +34,8 @@ pub fn render_document(
         background_color: Color::rgba(255.0, 255.0, 255.0, 1.0).into(),
         ..default()
     };
-    let mut sc = Vec::new();
-
+    let mut scripts = Vec::new();
+    let mut styles = Vec::new();
     commands
         .spawn(root)
         .with_children(|parent: &mut ChildBuilder<'_>| {
@@ -41,9 +43,15 @@ pub fn render_document(
             let document = Html::parse_document(&html);
             traverse_html(
                 document.root_element(), parent, &asset_server, 
-                &mut js_runtime, binding.children.as_mut(), &mut sc);
+                &mut js_runtime, binding.children.as_mut(), &mut scripts,
+                &mut styles);
+            for style in styles {
+                parse_css(style);
+            }
         });
-    for script in sc {
+    
+
+    for script in scripts {
         let code = Box::leak(script.clone().into_boxed_str());
         js_runtime.eval(code);
     }
@@ -56,7 +64,8 @@ fn traverse_html(
     asset_server: &Res<AssetServer>,
     js_runtime: &mut js_engine::V8Runtime,
     list: &mut Vec<Node>,
-    sc: &mut Vec<String>,
+    scripts: &mut Vec<String>,
+    styles: &mut Vec<String>,
 ) {
     let tag = element.value().name().to_string();
     let mut attributes: Vec<(String, String)> = Vec::new();
@@ -69,54 +78,59 @@ fn traverse_html(
         attributes: attributes,
         text: None,
         id: None,
+        style_sheet_list: None,
     };
 
-    let res = generate::get_node_result(element);
+    let res: NodeResult = generate::get_node_result(element);
     match res {
         // mark 大部分浏览器的逻辑是：在渲染过程中可以修改已经渲染好的dom，
         // 但目前这里的实现(GLOBAL_STATE)存在私锁的问题。
         NodeResult::Script(script) => {
             // let code = Box::leak(script.clone().into_boxed_str());
             // js_runtime.eval(code);
-            sc.push(script);
+            scripts.push(script);
         }
         NodeResult::Style(style) => {
-            println!("{:?}", style);
+            styles.push(style);
         }
-        NodeResult::Div(bundle) => {
+        NodeResult::Div(bundle, style, text_style) => {
             let id = commands
                 .spawn(bundle)
                 .with_children(|parent: &mut ChildBuilder<'_>| {
                     for child in element.children() {
                         if let Some(child_element) = ElementRef::wrap(child) {
                             traverse_html(child_element.clone(), parent, asset_server,
-                                js_runtime, &mut el_data.children, sc);
+                                js_runtime, &mut el_data.children, scripts, styles);
                         } else if child.value().is_text() {
                             let text = child.value().as_text().unwrap().to_string();
+                            if text.trim().is_empty() {
+                                continue;
+                            }
                             let text_bundle = TextBundle::from_section(
-                                &text,
+                                text,
                                 TextStyle {
                                     font: asset_server.load("fonts/FiraMono-Medium.ttf"),
-                                    color: Color::BLACK,
-                                    ..default()
+                                    // ..default()
+                                    ..text_style
                                 },
                             );
                             let childern_id = parent.spawn(text_bundle).id();
                             el_data.text = Some(ElementText {
                                 id: Some(childern_id),
-                                text,
+                                text: child.value().as_text().unwrap().to_string(),
                             });
                         }
                     }
                 })
                 .id();
             el_data.id = Some(id);
-        }
+            el_data.style_sheet_list = Some(style);
+        },
     };
     list.push(el_data);
 }
 
-pub fn update_document(mut query: Query<&mut Text>
+pub fn update_node_text(mut query: Query<&mut Text>
 ) {
     let mut binding_action = qaq::GLOBAL_ACTION.lock().unwrap();
     while binding_action.actions.len() > 0 {
@@ -135,8 +149,4 @@ pub fn update_document(mut query: Query<&mut Text>
             }
         }
     }
-    // for mut text in &mut query {
-    //     text.sections[0].value = ui_state.name.clone();
-    // }
-    // query.get_mut(entity)
 }

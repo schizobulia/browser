@@ -10,6 +10,7 @@ pub static GLOBAL_STATE: Lazy<Mutex<Node>> = Lazy::new(|| {
         attributes: Vec::new(),
         text: None,
         id: None,
+        style_sheet_list: None,
     };
     Mutex::new(n)
 });

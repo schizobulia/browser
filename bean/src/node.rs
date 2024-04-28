@@ -1,6 +1,10 @@
 use bevy::{prelude::Entity};
 use serde::{Deserialize, Serialize};
+use crate::css::StyleSheet;
 
+/**
+ * dom在内存中的结构
+ */
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Node {
     pub children: Vec<Node>,
@@ -8,7 +12,9 @@ pub struct Node {
     pub attributes: Vec<(String, String)>,
     pub text: Option<ElementText>,
     pub id: Option<Entity>,
+    pub style_sheet_list: Option<StyleSheet>
 }
+
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ElementText {
@@ -46,8 +52,13 @@ pub fn get_node_by_id(list: &mut Vec<Node>, id: u64) -> Option<&mut Node> {
     let mut queue = list.iter_mut().collect::<Vec<_>>();
     while !queue.is_empty() {
         let node = queue.remove(0);
-        if node.id.unwrap() == Entity::from_bits(id) {
-            return Some(node);
+        match node.id {
+            Some(entity) => {
+                if entity == Entity::from_bits(id) {
+                    return Some(node);
+                }
+            },
+            None => {}
         }
         queue.extend(node.children.iter_mut().collect::<Vec<_>>());
     }
@@ -65,3 +76,4 @@ pub fn get_node_by_tag_id<'a>(id: String, list: &'a mut Vec<Node>) -> Option<&mu
     }
     None
 }
+

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
-use renderer::{render_document, update_document};
-use bean::ui_state::UiState;
+use renderer::{render_document, update_node_text};
+use bean::{qaq, ui_state::UiState};
 use network::get_html_by_url;
 
 pub fn open_window() {
@@ -13,7 +13,7 @@ pub fn open_window() {
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
         .add_systems(Startup, start_up)
         // .add_systems(PreUpdate, pre_update)
-        .add_systems(Update, (update, update_document))
+        .add_systems(Update, (update, update_node_text))
         // .add_systems(PostUpdate, post_update)
         // .add_systems(Last, last)
         .run();
@@ -59,6 +59,7 @@ fn update(mut contexts: EguiContexts, mut ui_state: ResMut<UiState>,
                         }
                         i += 1;
                     });
+                    qaq::GLOBAL_STATE.lock().unwrap().children.clear();
                     init_render_document(ui_state, commands, asset_server)
                 }
             });
