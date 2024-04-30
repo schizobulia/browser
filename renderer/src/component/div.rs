@@ -1,8 +1,7 @@
-
 use crate::component::base::BaseComponent;
+use bevy::prelude::Component;
 
-pub struct DivComponent {
-}
+#[derive(Component)]
+pub struct DivComponent {}
 
-impl BaseComponent for DivComponent {
-}
+impl BaseComponent for DivComponent {}

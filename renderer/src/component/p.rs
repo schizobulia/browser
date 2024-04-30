@@ -1,8 +1,4 @@
+use bevy::prelude::Component;
 
-use crate::component::base::BaseComponent;
-
-pub struct PComponent {
-}
-
-impl BaseComponent for PComponent {
-}
+#[derive(Component, Debug)]
+pub struct PComponent {}

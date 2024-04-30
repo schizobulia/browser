@@ -1,8 +1,8 @@
+use bean::{qaq, ui_state::UiState};
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
-use renderer::{render_document, update_node_text};
-use bean::{qaq, ui_state::UiState};
 use network::get_html_by_url;
+use renderer::{render_document, update_node_text};
 
 pub fn open_window() {
     App::new()
@@ -24,14 +24,18 @@ fn start_up(commands: Commands, asset_server: Res<AssetServer>, ui_state: ResMut
     init_render_document(ui_state, commands, asset_server);
 }
 
-fn init_render_document(ui_state: ResMut<UiState>, mut commands: Commands, asset_server: Res<AssetServer>,) {
+fn init_render_document(
+    ui_state: ResMut<UiState>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
     // Camera
     commands.spawn((Camera2dBundle::default(), IsDefaultUiCamera));
     let res = get_html_by_url(ui_state.name.clone());
     match res {
         Ok(html) => {
             render_document(commands, asset_server, ui_state, html);
-        },
+        }
         Err(e) => {
             println!("Get html failed: {:?}", e);
         }
@@ -42,8 +46,13 @@ fn init_render_document(ui_state: ResMut<UiState>, mut commands: Commands, asset
 // fn pre_update(mut commands: Commands, asset_server: Res<AssetServer>) {}
 
 // 每帧更新时执行。这是执行逻辑的主要阶段。
-fn update(mut contexts: EguiContexts, mut ui_state: ResMut<UiState>, 
-        query: Query<Entity>, mut commands: Commands, asset_server: Res<AssetServer>,) {
+fn update(
+    mut contexts: EguiContexts,
+    mut ui_state: ResMut<UiState>,
+    query: Query<Entity>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
     let ctx = contexts.ctx_mut();
     egui::TopBottomPanel::top("Top panel")
         .exact_height(15.0)
@@ -65,7 +74,6 @@ fn update(mut contexts: EguiContexts, mut ui_state: ResMut<UiState>,
             });
         });
 }
-
 
 // 更新阶段之后执行。这个阶段可以用于处理需要在主更新逻辑之后运行的系统。
 // fn post_update(mut contexts: EguiContexts, mut ui_state: ResMut<UiState>) {

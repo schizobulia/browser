@@ -1,6 +1,7 @@
-use bevy::{prelude::Entity};
+use crate::css::CSSRule;
+use bevy::prelude::Entity;
 use serde::{Deserialize, Serialize};
-use crate::css::StyleSheet;
+use std::collections::HashMap;
 
 /**
  * dom在内存中的结构
@@ -9,12 +10,11 @@ use crate::css::StyleSheet;
 pub struct Node {
     pub children: Vec<Node>,
     pub tag_name: String,
-    pub attributes: Vec<(String, String)>,
+    pub attributes: HashMap<String, String>,
     pub text: Option<ElementText>,
     pub id: Option<Entity>,
-    pub style_sheet_list: Option<StyleSheet>
+    pub style_sheet_list: Option<CSSRule>,
 }
-
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ElementText {
@@ -57,7 +57,7 @@ pub fn get_node_by_id(list: &mut Vec<Node>, id: u64) -> Option<&mut Node> {
                 if entity == Entity::from_bits(id) {
                     return Some(node);
                 }
-            },
+            }
             None => {}
         }
         queue.extend(node.children.iter_mut().collect::<Vec<_>>());
@@ -69,11 +69,14 @@ pub fn get_node_by_tag_id<'a>(id: String, list: &'a mut Vec<Node>) -> Option<&mu
     let mut queue = list.iter_mut().collect::<Vec<_>>();
     while !queue.is_empty() {
         let node = queue.remove(0);
-        if node.attributes.iter().any(|(key, value)| key == "id" && value == &id) {
+        if node
+            .attributes
+            .iter()
+            .any(|(key, value)| key == "id" && value == &id)
+        {
             return Some(node);
         }
         queue.extend(node.children.iter_mut().collect::<Vec<_>>());
     }
     None
 }
-

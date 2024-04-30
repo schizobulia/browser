@@ -1,4 +1,1 @@
-
-pub trait BaseComponent {
-
-}
+pub trait BaseComponent {}

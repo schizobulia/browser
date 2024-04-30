@@ -1,13 +1,14 @@
+use crate::{css::CSSStyleSheet, node::Node};
+use bevy::prelude::Entity;
 use once_cell::sync::Lazy;
-use crate::node::Node;
-use std::{sync::Mutex};
-use bevy::{prelude::Entity};
+use std::collections::HashMap;
+use std::sync::Mutex;
 
 pub static GLOBAL_STATE: Lazy<Mutex<Node>> = Lazy::new(|| {
     let n = Node {
         children: Vec::new(),
         tag_name: "html".to_owned(),
-        attributes: Vec::new(),
+        attributes: HashMap::new(),
         text: None,
         id: None,
         style_sheet_list: None,
@@ -24,6 +25,7 @@ pub struct ChangeText {
 #[derive(Debug)]
 pub enum Action {
     ChangeTextAction(ChangeText),
+    ChangeStyleAction(CSSStyleSheet),
 }
 
 pub struct ActionQueue {

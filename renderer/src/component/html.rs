@@ -1,8 +1,5 @@
-
 use crate::component::base::BaseComponent;
 
-pub struct HtmlComponent {
-}
+pub struct HtmlComponent {}
 
-impl BaseComponent for HtmlComponent {
-}
+impl BaseComponent for HtmlComponent {}
