@@ -1,5 +1,6 @@
 use bean::{qaq, ui_state::UiState};
 use bevy::prelude::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use network::get_html_by_url;
 use renderer::{render_document, update_node_text};
@@ -9,6 +10,7 @@ pub fn open_window() {
         .init_resource::<UiState>()
         .add_plugins(DefaultPlugins)
         .add_plugins(EguiPlugin)
+        .add_plugins(WorldInspectorPlugin::new())
         // Systems that create Egui widgets should be run during the `CoreSet::Update` set,
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
         .add_systems(Startup, start_up)

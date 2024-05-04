@@ -8,7 +8,7 @@ use crate::css::{conversion_style, conversion_text_style};
 pub enum NodeResult {
     Script(String),
     Style(String),
-    Div(NodeBundle, CSSRule, TextStyle),
+    Component(NodeBundle, CSSRule, TextStyle),
 }
 
 pub fn get_node_result(element: ElementRef) -> NodeResult {
@@ -79,7 +79,7 @@ pub fn get_node_result(element: ElementRef) -> NodeResult {
             style: Style { ..style_inner },
             ..default()
         };
-        return NodeResult::Div(bundle, styl_sheet, style_text_inner);
+        return NodeResult::Component(bundle, styl_sheet, style_text_inner);
     }
 
     if tag == "p" {
@@ -96,7 +96,7 @@ pub fn get_node_result(element: ElementRef) -> NodeResult {
             },
             ..default()
         };
-        return NodeResult::Div(bundle, styl_sheet, style_text_inner);
+        return NodeResult::Component(bundle, styl_sheet, style_text_inner);
     }
 
     if tag == "html" {
@@ -104,7 +104,7 @@ pub fn get_node_result(element: ElementRef) -> NodeResult {
             style: Style { ..style_inner },
             ..default()
         };
-        return NodeResult::Div(bundle, styl_sheet, style_text_inner);
+        return NodeResult::Component(bundle, styl_sheet, style_text_inner);
     }
 
     if tag == "body" {
@@ -112,7 +112,7 @@ pub fn get_node_result(element: ElementRef) -> NodeResult {
             style: Style { ..style_inner },
             ..default()
         };
-        return NodeResult::Div(bundle, styl_sheet, style_text_inner);
+        return NodeResult::Component(bundle, styl_sheet, style_text_inner);
     }
 
     let bundle: NodeBundle = NodeBundle {
@@ -123,5 +123,5 @@ pub fn get_node_result(element: ElementRef) -> NodeResult {
         },
         ..default()
     };
-    return NodeResult::Div(bundle, styl_sheet, style_text_inner);
+    return NodeResult::Component(bundle, styl_sheet, style_text_inner);
 }

@@ -4,7 +4,6 @@ mod css;
 mod generate;
 
 use std::collections::HashMap;
-
 use bevy::prelude::*;
 // use bevy_egui::EguiContexts;
 use bean::node::{ElementText, Node};
@@ -14,8 +13,6 @@ use css::parse_css;
 use generate::NodeResult;
 use js_engine;
 use scraper::{ElementRef, Html};
-#[derive(Component)]
-struct AnimateTranslation;
 
 pub fn render_document(
     mut commands: Commands,
@@ -68,9 +65,8 @@ fn traverse_html(
     styles: &mut Vec<String>,
     root_id: Entity,
 ) {
-    let mut rid = root_id.clone();
-    let mut stack = vec![element];
-    while let Some(element) = stack.pop() {
+    let mut stack = vec![(element, root_id.clone())];
+    while let Some((element, parent_id)) = stack.pop() {
         let res: NodeResult = generate::get_node_result(element);
         match res {
             NodeResult::Script(script) => {
@@ -79,7 +75,7 @@ fn traverse_html(
             NodeResult::Style(style) => {
                 styles.push(style);
             }
-            NodeResult::Div(bundle, style, text_style) => {
+            NodeResult::Component(bundle, style, text_style) => {
                 let mut binding = qaq::GLOBAL_STATE.lock().unwrap();
                 let list: &mut Vec<Node> = binding.children.as_mut();
                 let tag = element.value().name().to_string();
@@ -89,24 +85,22 @@ fn traverse_html(
                 });
                 let mut el_data: Node = Node {
                     children: Vec::new(),
-                    tag_name: tag,
-                    attributes: attributes,
+                    tag_name: tag.clone(),
+                    attributes: attributes.clone(),
                     text: None,
                     id: None,
                     style_sheet_list: None,
                 };
-                // binding = qaq::GLOBAL_STATE.lock().unwrap(); 
                 let id = commands.spawn(bundle).id();
-                commands.entity(rid).push_children(&vec![id.clone()]);
+                commands.entity(parent_id).push_children(&vec![id.clone()]);
                 el_data.id = Some(id.clone());
                 el_data.style_sheet_list = Some(style);
-                rid = id.clone();
                 for child in element.children().rev() {
                     if let Some(child_element) = ElementRef::wrap(child) {
-                        stack.push(child_element.clone());
+                        stack.push((child_element.clone(), id.clone()));
                     } else if child.value().is_text() {
-                        let text = child.value().as_text().unwrap().to_string();
-                        if text.trim().is_empty() {
+                        let text = child.value().as_text().unwrap().to_string().trim().to_string();
+                        if text == "" {
                             continue;
                         }
                         let text_bundle = TextBundle::from_section(
