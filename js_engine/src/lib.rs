@@ -1,4 +1,4 @@
-use bean::node::{get_node_by_id, get_node_by_tag_id, Node};
+use bean::node::{get_node_by_id, get_node_by_tag_id, set_u64_to_entity, Node};
 use bean::qaq;
 use deno_core::*;
 pub struct V8Runtime {
@@ -102,7 +102,7 @@ fn change_element_text(
     #[string] value: String,
 ) -> Result<String, deno_core::error::AnyError> {
     let mut binding = qaq::GLOBAL_STATE.lock().unwrap();
-    let data: Option<&mut Node> = get_node_by_id(binding.children.as_mut(), id.parse().unwrap());
+    let data: Option<&mut Node> = get_node_by_id(binding.children.as_mut(), set_u64_to_entity(id.parse().unwrap()));
     match data {
         Some(node) => match node.text {
             Some(ref mut text) => {

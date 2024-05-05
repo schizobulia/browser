@@ -16,6 +16,7 @@ pub struct Node {
     pub style_sheet_list: Option<CSSRule>,
 }
 
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ElementText {
     pub id: Option<Entity>,
@@ -48,13 +49,17 @@ pub fn get_children_by_tag_name<'a>(tag_name: &str, list: &'a mut Vec<Node>) -> 
 //     None
 // }
 
-pub fn get_node_by_id(list: &mut Vec<Node>, id: u64) -> Option<&mut Node> {
+pub fn set_u64_to_entity(id: u64) -> Entity {
+    Entity::from_bits(id)
+}
+
+pub fn get_node_by_id(list: &mut Vec<Node>, id: Entity) -> Option<&mut Node> {
     let mut queue = list.iter_mut().collect::<Vec<_>>();
     while !queue.is_empty() {
         let node = queue.remove(0);
         match node.id {
             Some(entity) => {
-                if entity == Entity::from_bits(id) {
+                if entity == id {
                     return Some(node);
                 }
             }

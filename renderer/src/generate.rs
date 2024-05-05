@@ -1,18 +1,21 @@
 use bean::css::{CSSRule, SourceType};
-use bevy::prelude::*;
+use bevy::{prelude::*};
 use bevy_egui::egui::TextBuffer;
 use scraper::ElementRef;
-
+use std::collections::HashMap;
 use crate::css::{conversion_style, conversion_text_style};
 
 pub enum NodeResult {
     Script(String),
     Style(String),
-    Component(NodeBundle, CSSRule, TextStyle),
+    Component(NodeBundle, CSSRule, TextStyle, HashMap<String, String>),
 }
 
-pub fn get_node_result(element: ElementRef) -> NodeResult {
-    let tag = element.value().name().to_string();
+pub fn get_node_result(element: ElementRef, tag: String) -> NodeResult {
+    let mut attributes = HashMap::new();
+    element.value().attrs.clone().iter().for_each(|attr| {
+        attributes.insert(attr.0.local.to_string(), attr.1.to_string());
+    });
     if tag == "script" {
         let mut script = String::new();
         for child in element.children() {
@@ -28,7 +31,7 @@ pub fn get_node_result(element: ElementRef) -> NodeResult {
         return NodeResult::Style(style);
     }
 
-    let style_val = element.value().attr("style");
+    let style_val = attributes.get("style");
     let mut styl_sheet = CSSRule::new();
     let mut style_inner = Style {
         width: Val::Percent(100.0),
@@ -79,7 +82,7 @@ pub fn get_node_result(element: ElementRef) -> NodeResult {
             style: Style { ..style_inner },
             ..default()
         };
-        return NodeResult::Component(bundle, styl_sheet, style_text_inner);
+        return NodeResult::Component(bundle, styl_sheet, style_text_inner, attributes);
     }
 
     if tag == "p" {
@@ -96,7 +99,7 @@ pub fn get_node_result(element: ElementRef) -> NodeResult {
             },
             ..default()
         };
-        return NodeResult::Component(bundle, styl_sheet, style_text_inner);
+        return NodeResult::Component(bundle, styl_sheet, style_text_inner, attributes);
     }
 
     if tag == "html" {
@@ -104,7 +107,7 @@ pub fn get_node_result(element: ElementRef) -> NodeResult {
             style: Style { ..style_inner },
             ..default()
         };
-        return NodeResult::Component(bundle, styl_sheet, style_text_inner);
+        return NodeResult::Component(bundle, styl_sheet, style_text_inner, attributes);
     }
 
     if tag == "body" {
@@ -112,7 +115,7 @@ pub fn get_node_result(element: ElementRef) -> NodeResult {
             style: Style { ..style_inner },
             ..default()
         };
-        return NodeResult::Component(bundle, styl_sheet, style_text_inner);
+        return NodeResult::Component(bundle, styl_sheet, style_text_inner, attributes);
     }
 
     let bundle: NodeBundle = NodeBundle {
@@ -123,5 +126,5 @@ pub fn get_node_result(element: ElementRef) -> NodeResult {
         },
         ..default()
     };
-    return NodeResult::Component(bundle, styl_sheet, style_text_inner);
+    return NodeResult::Component(bundle, styl_sheet, style_text_inner, attributes);
 }
