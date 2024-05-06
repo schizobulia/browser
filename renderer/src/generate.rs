@@ -11,6 +11,9 @@ pub enum NodeResult {
     Component(NodeBundle, CSSRule, TextStyle, HashMap<String, String>),
 }
 
+/**
+ * get bevy node by element
+ */
 pub fn get_node_result(element: ElementRef, tag: String) -> NodeResult {
     let mut attributes = HashMap::new();
     element.value().attrs.clone().iter().for_each(|attr| {

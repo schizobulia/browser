@@ -1,6 +1,10 @@
+mod js;
+
 use bean::node::{get_node_by_id, get_node_by_tag_id, set_u64_to_entity, Node};
 use bean::qaq;
 use deno_core::*;
+
+
 pub struct V8Runtime {
     runtime: JsRuntime,
 }
@@ -23,40 +27,9 @@ impl V8Runtime {
         Self { runtime }
     }
 
-    // mark 这里应该设置为给v8注入全局变量，这里只是临时使用
+    // Mark: should be set here to inject global variables into v8, which is only used temporarily
     pub fn init_global(&mut self) {
-        self.eval(
-            "    class Element {
-            constructor(tag, innerText, _id) {
-                this.tag = tag;
-                this._id = _id
-                this._text = innerText
-                const descriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerText');
-                Object.defineProperty(this, 'innerText', {
-                    get: () => { return this._text },
-                    set: (value) => {
-                        Deno.core.ops.change_element_text(_id.toString(), value);
-                        this._text = value;
-                    }
-                });
-            }
-        }
-        globalThis.Element = Element
-        globalThis.document = {
-            getElementById: (id) => {
-                let data = Deno.core.ops.get_element_by_id(id);
-                if (data) {
-                   data = JSON.parse(data)
-                   const res = new globalThis.Element(data.tag_name, '', data.id)
-                   if (data.text) {
-                        res._text = data.text.text
-                   }
-                   return res
-                }
-                return undefined
-            }
-        }",
-        );
+        self.eval(js::get_init_js_code());
     }
 
     pub fn eval(&mut self, code: &'static str) {
@@ -80,6 +53,10 @@ async fn op_sum(#[serde] nums: Vec<f64>) -> Result<f64, deno_core::error::AnyErr
     Ok(sum)
 }
 
+/**
+ * Get element by id
+ * such as: document.getElementById('id')
+ */
 #[op2]
 #[string]
 fn get_element_by_id(#[string] id: String) -> Result<String, deno_core::error::AnyError> {
@@ -95,6 +72,10 @@ fn get_element_by_id(#[string] id: String) -> Result<String, deno_core::error::A
     Ok(res)
 }
 
+/**
+ * Change element text
+ * such as: document.getElementById('id').innerText = 'new text'
+ */
 #[op2]
 #[string]
 fn change_element_text(

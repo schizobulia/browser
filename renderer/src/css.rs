@@ -7,6 +7,9 @@ use bevy::ui::{FlexDirection, Style, Val};
 use bevy::utils::default;
 use cssparser::*;
 
+/**
+ * Parse css
+ */
 pub fn parse_css(css: String) -> CSSStyleSheet {
     let mut input = ParserInput::new(css.as_str());
     let mut parser = Parser::new(&mut input);
@@ -91,6 +94,9 @@ pub fn conversion_style(key: String, value: String, style: &mut Style) {
     }
 }
 
+/**
+ * Conversion text style
+ */
 pub fn conversion_text_style(key: String, value: String, style: &mut TextStyle) {
     match key.as_str() {
         "color" => match value.as_str() {
@@ -114,6 +120,9 @@ pub fn conversion_text_style(key: String, value: String, style: &mut TextStyle) 
     }
 }
 
+/**
+ * Convert color name to hex
+ */
 fn color_to_hex(color_name: &str) -> String {
     let color_map: HashMap<&str, &str> = [
         ("aliceblue", "#f0f8ff"),

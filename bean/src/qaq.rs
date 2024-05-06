@@ -4,6 +4,9 @@ use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
+/**
+ * Global state management
+ */
 pub static GLOBAL_STATE: Lazy<Mutex<Node>> = Lazy::new(|| {
     let n = Node {
         children: Vec::new(),
@@ -11,7 +14,7 @@ pub static GLOBAL_STATE: Lazy<Mutex<Node>> = Lazy::new(|| {
         attributes: HashMap::new(),
         text: None,
         id: None,
-        style_sheet_list: None,
+        style_rules: None,
     };
     Mutex::new(n)
 });
@@ -22,16 +25,23 @@ pub struct ChangeText {
     pub value: String,
 }
 
+/**
+ * Action type
+ * Different action means different tasks.
+ */
 #[derive(Debug)]
 pub enum Action {
     ChangeTextAction(ChangeText),
-    ChangeStyleAction(CSSStyleSheet),
+    AddStyleSheetAction(CSSStyleSheet),
 }
 
 pub struct ActionQueue {
     pub actions: Vec<Action>,
 }
 
+/**
+ * Global action queue
+ */
 pub static GLOBAL_ACTION: Lazy<Mutex<ActionQueue>> = Lazy::new(|| {
     let n = ActionQueue {
         actions: Vec::new(),

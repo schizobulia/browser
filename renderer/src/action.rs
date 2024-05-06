@@ -3,6 +3,9 @@ use bean::css::CSSRule;
 use bean::{css::CSSStyleSheet, node::Node};
 use bevy::prelude::{Color, Query, Style, Text};
 
+/**
+ * Modify the text in the node
+ */
 pub fn change_text_action(query: &mut Query<(&mut Text, &mut Style)>, change_text: ChangeText) {
     let text = query.get_mut(change_text.id);
     match text {
@@ -19,9 +22,9 @@ pub fn change_text_action(query: &mut Query<(&mut Text, &mut Style)>, change_tex
 }
 
 /**
- * 选择器查询
+ * Add CSSStyleSheet
  */
-pub fn change_style_action(
+pub fn add_style_sheet_action(
     style: CSSStyleSheet,
     list: &mut Vec<Node>,
     query: &mut Query<(&mut Text, &mut Style)>,
@@ -46,6 +49,9 @@ pub fn change_style_action(
     }
 }
 
+/**
+ * Change the style of the node
+ */
 fn change_dom_style(query: &mut Query<(&mut Text, &mut Style)>, node: &mut Node, rules: CSSRule) {
     match node.clone().text {
         Some(dom_text) => match query.get_mut(dom_text.id.unwrap()) {
@@ -53,7 +59,7 @@ fn change_dom_style(query: &mut Query<(&mut Text, &mut Style)>, node: &mut Node,
                 let mut text = nodes.0;
                 for rule in rules.val.clone() {
                     let mut tag = true;
-                    match node.style_sheet_list.clone() {
+                    match node.style_rules.clone() {
                         Some(list) => {
                             if list.val.get(rule.0.as_str()).is_some() {
                                 match list.source {

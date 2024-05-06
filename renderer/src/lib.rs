@@ -16,6 +16,9 @@ use scraper::{ElementRef, Html};
 // use serde_json;
 use std::collections::HashMap;
 
+/**
+ * Render the document
+ */
 pub fn render_document(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -52,7 +55,7 @@ pub fn render_document(
             .lock()
             .unwrap()
             .actions
-            .push(qaq::Action::ChangeStyleAction(parse_css(style)));
+            .push(qaq::Action::AddStyleSheetAction(parse_css(style)));
     }
 
     // let binding = qaq::GLOBAL_STATE.lock().unwrap();
@@ -60,6 +63,9 @@ pub fn render_document(
     // println!("{:?}", serde_json::to_string(&n).unwrap());
 }
 
+/**
+ * Create a node
+ */
 fn create_node(
     tag: String,
     attributes: HashMap<String, String>,
@@ -73,15 +79,18 @@ fn create_node(
         attributes: attributes,
         text: None,
         id: None,
-        style_sheet_list: None,
+        style_rules: None,
     };
     let id = commands.spawn(bundle).id();
     commands.entity(parent_id).push_children(&vec![id.clone()]);
     el_data.id = Some(id.clone());
-    el_data.style_sheet_list = Some(style);
+    el_data.style_rules = Some(style);
     el_data
 }
 
+/**
+ * Traverse the html
+ */
 fn traverse_html(
     element: ElementRef,
     commands: &mut Commands,
@@ -160,7 +169,11 @@ fn traverse_html(
     styles
 }
 
-pub fn update_node_text(
+/**
+ * Update the document by action
+ * All the updates about dom on the page are here.
+ */
+pub fn update_document_by_action(
     // mut query_text: Query<&mut Text>,
     // mut query_style: Query<&mut Style>,
     mut query: Query<(&mut Text, &mut Style)>,
@@ -172,8 +185,8 @@ pub fn update_node_text(
             qaq::Action::ChangeTextAction(change_text) => {
                 action::change_text_action(&mut query, change_text);
             }
-            qaq::Action::ChangeStyleAction(style) => {
-                action::change_style_action(style, &mut list, &mut query);
+            qaq::Action::AddStyleSheetAction(style) => {
+                action::add_style_sheet_action(style, &mut list, &mut query);
             }
         }
     }

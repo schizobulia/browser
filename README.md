@@ -1,26 +1,31 @@
-编写一个浏览器涉及到多个关键模块的集成，这些模块共同工作以提供浏览网页的功能。以下是浏览器中的主要模块：
-1. **用户界面（UI）**：
-   - 提供用户与浏览器交互的界面，包括地址栏、前进/后退按钮、书签、历史记录等。
-2. **网络引擎**：
-   - 负责与网络的通信，包括发送和接收 HTTP 请求，处理 SSL/TLS 连接，以及解析 URL。
-3. **渲染引擎（Renderer）**：
-   - 负责解析和渲染网页内容，包括 HTML、CSS 和 JavaScript。这个模块通常使用自己的 JavaScript 引擎，如 WebKit 的 JavaScriptCore 或 Blink 的 V8。
-4. **JavaScript 引擎**：
-   - 执行网页中的 JavaScript 代码。这个引擎需要高效、安全地执行 JavaScript 代码，同时提供良好的性能。
-5. **存储**：
-   - 管理网页的本地数据存储，包括 Cookie、本地存储、IndexedDB 等。
-6. **安全**：
-   - 负责处理安全相关的功能，如 SSL/TLS 连接、同源策略、内容安全策略等。
-7. **插件系统**：
-   - 支持浏览器扩展和插件，允许用户增加新的功能或修改现有功能。
-8. **数据处理**：
-   - 处理和解析网页的数据，如 XML、JSON 等。
-9. **多媒体处理**：
-   - 处理网页中的多媒体内容，如音频、视频和图片。
-10. **性能监控**：
-    - 监控和报告网页的性能，包括页面加载时间、JavaScript 执行时间等。
-11. **资源管理**：
-    - 管理网页的资源，如图片、CSS 文件、JavaScript 文件等。
-12. **缓存**：
-    - 缓存网页和资源，以提高加载速度和性能。
-这些模块需要协同工作，以确保浏览器能够高效、安全地显示网页内容。编写一个浏览器需要深入了解这些模块的功能和它们之间的交互。
+## Writing a browser involves the integration of several key modules that work together to provide the ability to browse the web. 
+
+The following are the main modules in the browser: 
+1. user interface (UI): 
+-provides an interface for users to interact with the browser, including address bar, forward / back buttons, bookmarks, history, etc. 
+2. Network engine: 
+-responsible for communicating with the network, including sending and receiving HTTP requests, processing SSL/TLS connections, and parsing URL. 
+3. rendering engine (Renderer): 
+-responsible for parsing and rendering web content, including HTML, CSS and JavaScript. 
+This module usually uses its own JavaScript engine, such as WebKit's JavaScriptCore or Blink's V8. 
+4. JavaScript engine: 
+-executes the JavaScript code in the web page. 
+This engine needs to execute JavaScript code efficiently and safely while providing good performance. 
+5. Storage: 
+-manage the local data storage of web pages, including Cookie, local storage, IndexedDB, etc. 
+6. Security: 
+-responsible for handling security-related functions, such as SSL/TLS connection, homology policy, content security policy, etc. 
+7. plug-in system: 
+-support browser extensions and plug-ins that allow users to add new features or modify existing ones. 
+8. data processing: 
+-processing and parsing web page data, such as XML, JSON, etc. 
+9. Multimedia processing: 
+-handle multimedia content in web pages, such as audio, video and pictures. 
+10. performance Monitoring: 
+-Monitoring and reporting the performance of web pages, including page loading time, JavaScript execution time, etc. 
+11. Resource Management: 
+-manage web resources, such as pictures, CSS files, JavaScript files, etc. 
+12. Cache: 
+-caching web pages and resources to improve loading speed and performance. 
+These modules need to work together to ensure that browsers can display web content efficiently and safely. 
+Writing a browser requires an in-depth understanding of the functions of these modules and the interaction between them.

@@ -2,17 +2,17 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /**
- * css来源，方便做权重控制
+ * Css source, convenient for weight control
  */
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum SourceType {
-    StyleTag, // style标签
-    Inline,   // 内联
-    External, // 外部
+    StyleTag,
+    Inline,
+    External,
 }
 
 /**
- * css结构,为了保证渲染时的性能
+ * https://developer.mozilla.org/zh-CN/docs/Web/API/CSSRule
  */
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CSSRule {
@@ -33,6 +33,9 @@ impl CSSRule {
     }
 }
 
+/**
+ * https://developer.mozilla.org/zh-CN/docs/Web/API/CSSStyleSheet 
+ * */
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CSSStyleSheet {
     pub rules: Vec<CSSRule>,

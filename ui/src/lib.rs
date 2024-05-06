@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use network::get_html_by_url;
-use renderer::{render_document, update_node_text};
+use renderer::{render_document, update_document_by_action};
 
 pub fn open_window() {
     App::new()
@@ -15,13 +15,16 @@ pub fn open_window() {
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
         .add_systems(Startup, start_up)
         // .add_systems(PreUpdate, pre_update)
-        .add_systems(Update, (update, update_node_text))
+        .add_systems(Update, (update, update_document_by_action))
         // .add_systems(PostUpdate, post_update)
         // .add_systems(Last, last)
         .run();
 }
 
-// 应用程序启动时执行。这个阶段通常用于初始化资源、设置状态和配置。
+/**
+ * Executes when the application starts.
+ * This phase is typically used to initialize resources, set state, and configure. 
+ */
 fn start_up(commands: Commands, asset_server: Res<AssetServer>, ui_state: ResMut<UiState>) {
     init_render_document(ui_state, commands, asset_server);
 }
@@ -44,10 +47,16 @@ fn init_render_document(
     }
 }
 
-// 更新阶段之前执行。这个阶段可以用于处理需要在主更新逻辑之前运行的系统。
+/**
+ * Execute before the update phase. 
+ * This phase can be used to deal with systems that need to run before the main update logic.
+ */
 // fn pre_update(mut commands: Commands, asset_server: Res<AssetServer>) {}
 
-// 每帧更新时执行。这是执行逻辑的主要阶段。
+/**
+ * Executes when each frame is updated. 
+ * This is the main stage of implementing logic.
+ */
 fn update(
     mut contexts: EguiContexts,
     mut ui_state: ResMut<UiState>,
@@ -77,9 +86,11 @@ fn update(
         });
 }
 
-// 更新阶段之后执行。这个阶段可以用于处理需要在主更新逻辑之后运行的系统。
+// Execute after the update phase. 
+// This phase can be used to deal with systems that need to run after the main update logic.
 // fn post_update(mut contexts: EguiContexts, mut ui_state: ResMut<UiState>) {
 // }
 
-// 应用程序关闭时执行。这个阶段可以用于执行清理工作。
+// Executes when the application is closed. 
+// This phase can be used to perform cleanup.
 // fn last() {}
