@@ -1,14 +1,15 @@
 use crate::css::CSSRule;
 use bevy::prelude::Entity;
+use std::{collections::HashMap, sync::{Arc, Mutex}};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use serde_json::json;
 
 /**
  * The structure of dom in memory
  */
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone)]
 pub struct Node {
-    pub children: Vec<Node>,
+    pub children: Vec<Arc<Mutex<Node>>>,
     pub tag_name: String,
     pub attributes: HashMap<String, String>,
     pub text: Option<ElementText>,
@@ -19,27 +20,84 @@ pub struct Node {
 /**
  * Text node
  */
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ElementText {
     pub id: Option<Entity>,
     pub text: String,
 }
 
-/**
- * Obtain child nodes according to tagName
- */
-pub fn get_children_by_tag_name<'a>(tag_name: &str, list: &'a mut Vec<Node>) -> Vec<Entity> {
-    let mut result = Vec::new();
-    let mut queue = list.iter_mut().collect::<Vec<_>>();
 
-    while !queue.is_empty() {
-        let node = queue.remove(0);
-        if node.tag_name == tag_name {
-            result.push(node.clone().id.unwrap());
+impl Node {
+    pub fn pretty_print(&self, depth: usize) {
+        let indent = "  ".repeat(depth);
+        println!("{}<{}>", indent, self.tag_name);
+        for child in &self.children {
+            child.lock().unwrap().pretty_print(depth + 1);
         }
-        queue.extend(node.children.iter_mut().collect::<Vec<_>>());
+        if let Some(text) = &self.text {
+            println!("{}  {}", indent, text.text);
+        }
+        println!("{}</{}>", indent, self.tag_name);
     }
-    result
+
+    pub fn get_node_by_id(&self, id: u64) -> Option<Arc<Mutex<Node>>>  {
+        let mut queue = self.children.to_vec();
+        while let Some(node_arc) = queue.pop() {
+            let node = node_arc.lock().unwrap();
+            if node.id == Some(set_u64_to_entity(id)) {
+                return Some(node_arc.clone());
+            }
+            // 将子节点添加到待访问列表
+            queue.extend(node.children.iter().cloned());
+        }
+        None
+    }
+
+    pub fn get_node_by_tag_id(&self, id: String) -> Option<Arc<Mutex<Node>>> {
+        let mut queue = self.children.to_vec();
+        while let Some(node_arc) = queue.pop() {
+            let node = node_arc.lock().unwrap();
+            if node
+                .attributes
+                .iter()
+                .any(|(key, value)| key == "id" && value == &id)
+            {
+                return Some(node_arc.clone());
+            }
+            // 将子节点添加到待访问列表
+            queue.extend(node.children.iter().cloned());
+        }
+        None
+    }
+
+    pub fn get_children_by_tag_name(&self, tag_name: &str) -> Vec<Entity> {
+        let mut matching_ids = Vec::new();
+        let mut nodes_to_visit = self.children.clone();
+    
+        while let Some(node_arc) = nodes_to_visit.pop() {
+            let node = node_arc.lock().unwrap();
+            if node.tag_name == tag_name {
+                if let Some(id) = node.id {
+                    matching_ids.push(id);
+                }
+            }
+            for child in &node.children {
+                nodes_to_visit.push(child.clone());
+            }
+        }
+        matching_ids
+    }
+    
+    pub fn to_json(&self) -> String {
+        let value = json!({
+            "tag_name": self.tag_name,
+            "attributes": self.attributes,
+            "text": self.text,
+            "id": self.id,
+            "style_rules": self.style_rules,
+        });
+        value.to_string()
+    }
 }
 
 // pub fn get_node_by_id(list: &mut Vec<Node>, id: Entity) -> Option<&mut Node> {
@@ -56,43 +114,4 @@ pub fn get_children_by_tag_name<'a>(tag_name: &str, list: &'a mut Vec<Node>) -> 
 
 pub fn set_u64_to_entity(id: u64) -> Entity {
     Entity::from_bits(id)
-}
-
-/**
- * Get the node according to the id
- */
-pub fn get_node_by_id(list: &mut Vec<Node>, id: Entity) -> Option<&mut Node> {
-    let mut queue = list.iter_mut().collect::<Vec<_>>();
-    while !queue.is_empty() {
-        let node = queue.remove(0);
-        match node.id {
-            Some(entity) => {
-                if entity == id {
-                    return Some(node);
-                }
-            }
-            None => {}
-        }
-        queue.extend(node.children.iter_mut().collect::<Vec<_>>());
-    }
-    None
-}
-
-/**
- * Get the node according to the tag id
- */
-pub fn get_node_by_tag_id<'a>(id: String, list: &'a mut Vec<Node>) -> Option<&mut Node> {
-    let mut queue = list.iter_mut().collect::<Vec<_>>();
-    while !queue.is_empty() {
-        let node = queue.remove(0);
-        if node
-            .attributes
-            .iter()
-            .any(|(key, value)| key == "id" && value == &id)
-        {
-            return Some(node);
-        }
-        queue.extend(node.children.iter_mut().collect::<Vec<_>>());
-    }
-    None
 }

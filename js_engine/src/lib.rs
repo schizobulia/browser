@@ -1,9 +1,7 @@
 mod js;
 
-use bean::node::{get_node_by_id, get_node_by_tag_id, set_u64_to_entity, Node};
 use bean::qaq;
 use deno_core::*;
-
 
 pub struct V8Runtime {
     runtime: JsRuntime,
@@ -60,12 +58,13 @@ async fn op_sum(#[serde] nums: Vec<f64>) -> Result<f64, deno_core::error::AnyErr
 #[op2]
 #[string]
 fn get_element_by_id(#[string] id: String) -> Result<String, deno_core::error::AnyError> {
-    let mut binding = qaq::GLOBAL_STATE.lock().unwrap();
-    let list: Option<&mut Node> = get_node_by_tag_id(id, binding.children.as_mut());
+    let node = qaq::GLOBAL_STATE.lock().unwrap();
+    let list = node.get_node_by_tag_id(id);
     let mut res: String = String::new();
     match list {
         Some(node) => {
-            res = serde_json::to_string(&node).unwrap();
+            let tmp = node.lock().unwrap().to_owned();
+            res = tmp.to_json();
         }
         None => {}
     }
@@ -82,23 +81,25 @@ fn change_element_text(
     #[string] id: String,
     #[string] value: String,
 ) -> Result<String, deno_core::error::AnyError> {
-    let mut binding = qaq::GLOBAL_STATE.lock().unwrap();
-    let data: Option<&mut Node> = get_node_by_id(binding.children.as_mut(), set_u64_to_entity(id.parse().unwrap()));
-    match data {
-        Some(node) => match node.text {
-            Some(ref mut text) => {
-                let mut binding_action = qaq::GLOBAL_ACTION.lock().unwrap();
-                binding_action
-                    .actions
-                    .push(qaq::Action::ChangeTextAction(qaq::ChangeText {
-                        id: text.id.unwrap(),
-                        value: value.clone(),
-                    }));
-                text.text = value;
-            }
-            None => {}
+    let node = qaq::GLOBAL_STATE.lock().unwrap();
+    match node.get_node_by_id(id.parse().unwrap()) {
+        Some(data) => match data.lock() {
+            Ok(mut d) => match d.text {
+                Some(ref mut text) => {
+                    let mut binding_action = qaq::GLOBAL_ACTION.lock().unwrap();
+                    binding_action
+                        .actions
+                        .push(qaq::Action::ChangeTextAction(qaq::ChangeText {
+                            id: text.id.unwrap(),
+                            value: value.clone(),
+                        }));
+                    text.text = value;
+                }
+                None => {}
+            },
+            Err(_) => {}
         },
         None => {}
-    }
+    };
     Ok(String::new())
 }

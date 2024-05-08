@@ -2,21 +2,21 @@ use crate::{css::CSSStyleSheet, node::Node};
 use bevy::prelude::Entity;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 /**
  * Global state management
  */
-pub static GLOBAL_STATE: Lazy<Mutex<Node>> = Lazy::new(|| {
+pub static GLOBAL_STATE: Lazy<Arc<Mutex<Node>>> = Lazy::new(|| {
     let n = Node {
         children: Vec::new(),
-        tag_name: "html".to_owned(),
+        tag_name: "0".to_owned(),
         attributes: HashMap::new(),
         text: None,
         id: None,
         style_rules: None,
     };
-    Mutex::new(n)
+    Arc::new(Mutex::new(n))
 });
 
 #[derive(Debug)]

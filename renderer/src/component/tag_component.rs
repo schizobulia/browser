@@ -1,3 +1,3 @@
-pub struct HTMLTagComponent {
-    pub tag_name: String,
-}
+// pub struct HTMLTagComponent {
+//     pub tag_name: String,
+// }

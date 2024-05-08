@@ -5,16 +5,15 @@ mod generate;
 
 use bean::css::CSSRule;
 use bevy::prelude::*;
-// use bevy_egui::EguiContexts;
-use bean::node::{get_node_by_id, ElementText, Node};
+use bean::node::{ElementText, Node};
 use bean::qaq;
 use bean::ui_state::UiState;
 use css::parse_css;
 use generate::NodeResult;
 use js_engine;
 use scraper::{ElementRef, Html};
-// use serde_json;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 /**
  * Render the document
@@ -58,9 +57,9 @@ pub fn render_document(
             .push(qaq::Action::AddStyleSheetAction(parse_css(style)));
     }
 
-    // let binding = qaq::GLOBAL_STATE.lock().unwrap();
-    // let n = binding.children.get(0).unwrap();
-    // println!("{:?}", serde_json::to_string(&n).unwrap());
+    let binding = qaq::GLOBAL_STATE.lock().unwrap().to_owned();
+    binding.pretty_print(0);
+    drop(binding);
 }
 
 /**
@@ -99,10 +98,23 @@ fn traverse_html(
     root_id: Entity,
 ) -> Vec<String> {
     let mut styles = Vec::new();
-    let mut stack = vec![(element, root_id.clone())];
-    while let Some((element, parent_id)) = stack.pop() {
+    let root_html = Node {
+        children: Vec::new(),
+        tag_name: "root".to_owned(),
+        attributes: HashMap::new(),
+        text: None,
+        id: Some(root_id),
+        style_rules: None,
+    };
+    let mut root_node = qaq::GLOBAL_STATE.lock().unwrap();
+    let html_tmp = get_arc_node(root_html);
+    root_node.children.push(html_tmp.clone());
+    drop(root_node);
+    let mut stack = vec![(element, html_tmp)];
+    while let Some((element, parent_node)) = stack.pop() {
         let tag = element.value().name().to_string();
         let res: NodeResult = generate::get_node_result(element, tag.clone());
+        
         match res {
             NodeResult::Script(script) => {
                 js_runtime.eval(Box::leak(script.clone().into_boxed_str()));
@@ -111,13 +123,13 @@ fn traverse_html(
                 styles.push(style);
             }
             NodeResult::Component(bundle, style, text_style, attributes) => {
-                let mut binding = qaq::GLOBAL_STATE.lock().unwrap();
-                let list: &mut Vec<Node> = binding.children.as_mut();
-                let mut el_data: Node = create_node(tag.clone(), attributes, commands, parent_id.clone(), style, bundle);
+                let el_data: Node = create_node(tag.clone(), attributes, commands, parent_node.lock().unwrap().id.unwrap().clone(), style, bundle);
                 let id = el_data.id.unwrap();
+                let tmp = get_arc_node(el_data);
+                parent_node.lock().unwrap().children.push(tmp.clone());
                 for child in element.children().rev() {
                     if let Some(child_element) = ElementRef::wrap(child) {
-                        stack.push((child_element.clone(), id.clone()));
+                        stack.push((child_element.clone(), tmp.clone()));
                     } else if child.value().is_text() {
                         let text = child.value().as_text().unwrap().to_string().trim().to_string();
                         if text == "" {
@@ -132,41 +144,22 @@ fn traverse_html(
                         );
                         let childern_id = commands.spawn(text_bundle).id();
                         commands.entity(id).push_children(&vec![childern_id.clone()]);
-                        el_data.text = Some(ElementText {
+                        tmp.lock().unwrap().text = Some(ElementText {
                             id: Some(childern_id),
                             text: child.value().as_text().unwrap().to_string(),
                         });
                     }
                 }
-                match list.last_mut() {
-                    Some(last) => {
-                        match last.id {
-                            Some(c_id) => {
-                                if c_id == parent_id {
-                                    last.children.push(el_data);
-                                } else {
-                                    match get_node_by_id(list, parent_id) {
-                                        Some(l) => {
-                                            l.children.push(el_data);
-                                        },
-                                        None => {}
-                                    }
-                                }
-                            },
-                            None => {
-                                println!("None");
-                            }
-                        }
-                    },
-                    None => {
-                        list.push(el_data);
-                    }
-                }
-                drop(binding);
             }
         };
     }
+
     styles
+}
+
+fn get_arc_node(node: Node) -> Arc<Mutex<Node>> {
+    let node_nc = Arc::new(Mutex::new(node));
+    Arc::clone(&node_nc)
 }
 
 /**
@@ -178,7 +171,6 @@ pub fn update_document_by_action(
     // mut query_style: Query<&mut Style>,
     mut query: Query<(&mut Text, &mut Style)>,
 ) {
-    let mut list = qaq::GLOBAL_STATE.lock().unwrap().children.clone();
     let mut binding_action = qaq::GLOBAL_ACTION.lock().unwrap();
     while binding_action.actions.len() > 0 {
         match binding_action.actions.remove(0) {
@@ -186,7 +178,7 @@ pub fn update_document_by_action(
                 action::change_text_action(&mut query, change_text);
             }
             qaq::Action::AddStyleSheetAction(style) => {
-                action::add_style_sheet_action(style, &mut list, &mut query);
+                action::add_style_sheet_action(style, &mut query);
             }
         }
     }
