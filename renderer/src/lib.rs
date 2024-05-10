@@ -57,9 +57,9 @@ pub fn render_document(
             .push(qaq::Action::AddStyleSheetAction(parse_css(style)));
     }
 
-    let binding = qaq::GLOBAL_STATE.lock().unwrap().to_owned();
-    binding.pretty_print(0);
-    drop(binding);
+    // let binding = qaq::GLOBAL_STATE.lock().unwrap().to_owned();
+    // binding.pretty_print(0);
+    // drop(binding);
 }
 
 /**
@@ -122,8 +122,11 @@ fn traverse_html(
             NodeResult::Style(style) => {
                 styles.push(style);
             }
-            NodeResult::Component(bundle, style, text_style, attributes) => {
-                let el_data: Node = create_node(tag.clone(), attributes, commands, parent_node.lock().unwrap().id.unwrap().clone(), style, bundle);
+            NodeResult::Component(component) => {
+                let el_data: Node = create_node(tag.clone(), 
+                    component.get_attributes(), commands,
+                     parent_node.lock().unwrap().id.unwrap().clone(), 
+                     component.get_style_sheet(), component.get_bundle());
                 let id = el_data.id.unwrap();
                 let tmp = get_arc_node(el_data);
                 parent_node.lock().unwrap().children.push(tmp.clone());
@@ -139,7 +142,7 @@ fn traverse_html(
                             text,
                             TextStyle {
                                 font: asset_server.load("fonts/FiraMono-Medium.ttf"),
-                                ..text_style
+                                ..component.get_style_text_inner()
                             },
                         );
                         let childern_id = commands.spawn(text_bundle).id();
