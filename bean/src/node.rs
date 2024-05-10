@@ -1,8 +1,11 @@
 use crate::css::CSSRule;
 use bevy::prelude::Entity;
-use std::{collections::HashMap, sync::{Arc, Mutex}};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 /**
  * The structure of dom in memory
@@ -26,7 +29,6 @@ pub struct ElementText {
     pub text: String,
 }
 
-
 impl Node {
     pub fn pretty_print(&self, depth: usize) {
         let indent = "  ".repeat(depth);
@@ -40,7 +42,7 @@ impl Node {
         println!("{}</{}>", indent, self.tag_name);
     }
 
-    pub fn get_node_by_id(&self, id: u64) -> Option<Arc<Mutex<Node>>>  {
+    pub fn get_node_by_id(&self, id: u64) -> Option<Arc<Mutex<Node>>> {
         let mut queue = self.children.to_vec();
         while let Some(node_arc) = queue.pop() {
             let node = node_arc.lock().unwrap();
@@ -73,7 +75,7 @@ impl Node {
     pub fn get_children_by_tag_name(&self, tag_name: &str) -> Vec<Entity> {
         let mut matching_ids = Vec::new();
         let mut nodes_to_visit = self.children.clone();
-    
+
         while let Some(node_arc) = nodes_to_visit.pop() {
             let node = node_arc.lock().unwrap();
             if node.tag_name == tag_name {
@@ -87,7 +89,7 @@ impl Node {
         }
         matching_ids
     }
-    
+
     pub fn to_json(&self) -> String {
         let value = json!({
             "tag_name": self.tag_name,

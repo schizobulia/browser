@@ -5,7 +5,7 @@ use bevy::prelude::Resource;
  */
 #[derive(Resource)]
 pub struct UiState {
-    pub name: String
+    pub name: String,
 }
 
 impl Default for UiState {

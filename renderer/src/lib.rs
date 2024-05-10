@@ -4,10 +4,10 @@ mod css;
 mod generate;
 
 use bean::css::CSSRule;
-use bevy::prelude::*;
 use bean::node::{ElementText, Node};
 use bean::qaq;
 use bean::ui_state::UiState;
+use bevy::prelude::*;
 use css::parse_css;
 use generate::NodeResult;
 use js_engine;
@@ -32,13 +32,12 @@ pub fn render_document(
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
             flex_direction: FlexDirection::Column,
-            justify_content: JustifyContent::SpaceBetween,
             ..default()
         },
         background_color: Color::rgba(255.0, 255.0, 255.0, 1.0).into(),
         ..default()
     };
-    
+
     let document = Html::parse_document(&html);
     let root_id = commands.spawn(root).id();
     let styles = traverse_html(
@@ -71,7 +70,8 @@ fn create_node(
     commands: &mut Commands,
     parent_id: Entity,
     style: CSSRule,
-    bundle: NodeBundle) -> Node {
+    bundle: NodeBundle,
+) -> Node {
     let mut el_data = Node {
         children: Vec::new(),
         tag_name: tag.clone(),
@@ -110,11 +110,12 @@ fn traverse_html(
     let html_tmp = get_arc_node(root_html);
     root_node.children.push(html_tmp.clone());
     drop(root_node);
+    let mut inline_id = None;
     let mut stack = vec![(element, html_tmp)];
     while let Some((element, parent_node)) = stack.pop() {
         let tag = element.value().name().to_string();
         let res: NodeResult = generate::get_node_result(element, tag.clone());
-        
+
         match res {
             NodeResult::Script(script) => {
                 js_runtime.eval(Box::leak(script.clone().into_boxed_str()));
@@ -122,19 +123,49 @@ fn traverse_html(
             NodeResult::Style(style) => {
                 styles.push(style);
             }
-            NodeResult::Component(component) => {
-                let el_data: Node = create_node(tag.clone(), 
-                    component.get_attributes(), commands,
-                     parent_node.lock().unwrap().id.unwrap().clone(), 
-                     component.get_style_sheet(), component.get_bundle());
+            NodeResult::Component(mut component) => {
+                let parent_id = parent_node.lock().unwrap().id.unwrap().clone();
+                let el_data: Node = create_node(
+                    tag.clone(),
+                    component.get_attributes(),
+                    commands,
+                    parent_id,
+                    component.get_style_sheet(),
+                    component.get_bundle(),
+                );
                 let id = el_data.id.unwrap();
                 let tmp = get_arc_node(el_data);
                 parent_node.lock().unwrap().children.push(tmp.clone());
+                if component.block_inline() == "inline" {
+                    if inline_id.is_some() {
+                        commands
+                            .entity(inline_id.unwrap())
+                            .push_children(&vec![id.clone()]);
+                    } else {
+                        inline_id = inline_node(commands);
+                        commands
+                            .entity(inline_id.unwrap())
+                            .push_children(&vec![id.clone()]);
+                        commands
+                            .entity(parent_id)
+                            .push_children(&vec![inline_id.unwrap()]);
+                    }
+                } else {
+                    if inline_id.is_some() {
+                        inline_id = None;
+                    }
+                }
                 for child in element.children().rev() {
                     if let Some(child_element) = ElementRef::wrap(child) {
                         stack.push((child_element.clone(), tmp.clone()));
                     } else if child.value().is_text() {
-                        let text = child.value().as_text().unwrap().to_string().trim().to_string();
+                        let text = child
+                            .value()
+                            .as_text()
+                            .unwrap()
+                            .to_string()
+                            .trim()
+                            .to_string();
                         if text == "" {
                             continue;
                         }
@@ -146,7 +177,9 @@ fn traverse_html(
                             },
                         );
                         let childern_id = commands.spawn(text_bundle).id();
-                        commands.entity(id).push_children(&vec![childern_id.clone()]);
+                        commands
+                            .entity(id)
+                            .push_children(&vec![childern_id.clone()]);
                         tmp.lock().unwrap().text = Some(ElementText {
                             id: Some(childern_id),
                             text: child.value().as_text().unwrap().to_string(),
@@ -163,6 +196,22 @@ fn traverse_html(
 fn get_arc_node(node: Node) -> Arc<Mutex<Node>> {
     let node_nc = Arc::new(Mutex::new(node));
     Arc::clone(&node_nc)
+}
+
+fn inline_node(commands: &mut Commands) -> Option<Entity> {
+    Some(
+        commands
+            .spawn(NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    height: Val::Auto,
+                    flex_direction: FlexDirection::Row,
+                    ..default()
+                },
+                ..default()
+            })
+            .id(),
+    )
 }
 
 /**

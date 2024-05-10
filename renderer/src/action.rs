@@ -25,10 +25,7 @@ pub fn change_text_action(query: &mut Query<(&mut Text, &mut Style)>, change_tex
 /**
  * Add CSSStyleSheet
  */
-pub fn add_style_sheet_action(
-    style: CSSStyleSheet,
-    query: &mut Query<(&mut Text, &mut Style)>,
-) {
+pub fn add_style_sheet_action(style: CSSStyleSheet, query: &mut Query<(&mut Text, &mut Style)>) {
     let node = qaq::GLOBAL_STATE.lock().unwrap();
     let rules = style.rules;
     for rule in rules.iter() {
@@ -37,7 +34,7 @@ pub fn add_style_sheet_action(
                 if rule.val.len() != 0 {
                     change_dom_style(query, &mut n, rule.clone());
                 }
-            },
+            }
             None => {}
         }
     }
@@ -47,8 +44,11 @@ pub fn add_style_sheet_action(
 /**
  * Change the style of the node
  */
-fn change_dom_style(query: &mut Query<(&mut Text, &mut Style)>,
-    node: &mut std::sync::Arc<std::sync::Mutex<Node>>, rules: CSSRule) {
+fn change_dom_style(
+    query: &mut Query<(&mut Text, &mut Style)>,
+    node: &mut std::sync::Arc<std::sync::Mutex<Node>>,
+    rules: CSSRule,
+) {
     let n = node.lock().unwrap();
     match &n.text {
         Some(dom_text) => match query.get_mut(dom_text.id.unwrap()) {

@@ -34,7 +34,7 @@ impl CSSRule {
 }
 
 /**
- * https://developer.mozilla.org/zh-CN/docs/Web/API/CSSStyleSheet 
+ * https://developer.mozilla.org/zh-CN/docs/Web/API/CSSStyleSheet
  * */
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CSSStyleSheet {

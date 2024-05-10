@@ -39,7 +39,7 @@ pub fn get_node_result(element: ElementRef, tag: String) -> NodeResult {
     if tag == "style" {
         return get_style_res(element);
     }
-    let mut tag_component = HTMLTagComponent::new(tag, attributes);
+    let mut tag_component: HTMLTagComponent = HTMLTagComponent::new(tag, attributes);
 
     tag_component.init();
     return NodeResult::Component(tag_component);

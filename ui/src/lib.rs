@@ -1,7 +1,7 @@
 use bean::{qaq, ui_state::UiState};
 use bevy::prelude::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use network::get_html_by_url;
 use renderer::{render_document, update_document_by_action};
 
@@ -23,9 +23,13 @@ pub fn open_window() {
 
 /**
  * Executes when the application starts.
- * This phase is typically used to initialize resources, set state, and configure. 
+ * This phase is typically used to initialize resources, set state, and configure.
  */
-fn start_up(commands: Commands, asset_server: Res<AssetServer>, ui_state: ResMut<UiState>) {
+fn start_up(
+    commands: Commands,
+    asset_server: Res<AssetServer>,
+    ui_state: ResMut<UiState>,
+) {
     init_render_document(ui_state, commands, asset_server);
 }
 
@@ -48,13 +52,13 @@ fn init_render_document(
 }
 
 /**
- * Execute before the update phase. 
+ * Execute before the update phase.
  * This phase can be used to deal with systems that need to run before the main update logic.
  */
 // fn pre_update(mut commands: Commands, asset_server: Res<AssetServer>) {}
 
 /**
- * Executes when each frame is updated. 
+ * Executes when each frame is updated.
  * This is the main stage of implementing logic.
  */
 fn update(
@@ -86,11 +90,11 @@ fn update(
         });
 }
 
-// Execute after the update phase. 
+// Execute after the update phase.
 // This phase can be used to deal with systems that need to run after the main update logic.
 // fn post_update(mut contexts: EguiContexts, mut ui_state: ResMut<UiState>) {
 // }
 
-// Executes when the application is closed. 
+// Executes when the application is closed.
 // This phase can be used to perform cleanup.
 // fn last() {}

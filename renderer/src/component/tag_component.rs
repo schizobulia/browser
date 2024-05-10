@@ -1,9 +1,12 @@
-use std::collections::HashMap;
 use crate::css::{conversion_style, conversion_text_style};
 use bean::css::{CSSRule, SourceType};
 use bevy::{
-    render::color::Color, text::TextStyle, ui::{node_bundles::NodeBundle, FlexDirection, Style, Val}, utils::default
+    render::color::Color,
+    text::TextStyle,
+    ui::{node_bundles::NodeBundle, FlexDirection, Style, Val},
+    utils::default,
 };
+use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct HTMLTagComponent {
@@ -28,9 +31,7 @@ impl HTMLTagComponent {
                 color: Color::BLACK,
                 ..default()
             },
-            bundle: NodeBundle {
-                ..default()
-            },
+            bundle: NodeBundle { ..default() },
         }
     }
 
@@ -40,7 +41,6 @@ impl HTMLTagComponent {
         };
         let t = self.block_inline();
         if t == "block" {
-            style_inner.width = Val::Percent(100.0);
             style_inner.flex_direction = FlexDirection::Column;
         }
         self.init_css(&mut style_inner);
@@ -63,11 +63,7 @@ impl HTMLTagComponent {
                             Some(val) => {
                                 self.styl_sheet.val.insert(key.to_string(), val.to_string());
                                 if key.to_string() == "width" {
-                                    conversion_style(
-                                        key.to_string(),
-                                        val.to_string(),
-                                        style_inner,
-                                    );
+                                    conversion_style(key.to_string(), val.to_string(), style_inner);
                                 }
                                 if key.to_string() == "color" {
                                     conversion_text_style(
@@ -99,7 +95,7 @@ impl HTMLTagComponent {
             };
         }
     }
-    fn block_inline(&mut self) -> &str {
+    pub fn block_inline(&mut self) -> &str {
         let tag = !vec!["div", "p", "html", "body"].contains(&self.tag_name.as_str());
         if tag {
             return "inline";

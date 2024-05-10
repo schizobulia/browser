@@ -31,5 +31,5 @@ pub fn get_init_js_code() -> &'static str {
             }
             return undefined
         }
-    }"
+    }";
 }
