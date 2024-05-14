@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use network::get_html_by_url;
-use renderer::{render_document, update_document_by_action};
+use renderer::{interaction_events, render_document, update_document_by_action};
 
 pub fn open_window() {
     App::new()
@@ -15,7 +15,10 @@ pub fn open_window() {
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
         .add_systems(Startup, start_up)
         // .add_systems(PreUpdate, pre_update)
-        .add_systems(Update, (update, update_document_by_action))
+        .add_systems(
+            Update,
+            (update, update_document_by_action, interaction_events),
+        )
         // .add_systems(PostUpdate, post_update)
         // .add_systems(Last, last)
         .run();
@@ -25,11 +28,7 @@ pub fn open_window() {
  * Executes when the application starts.
  * This phase is typically used to initialize resources, set state, and configure.
  */
-fn start_up(
-    commands: Commands,
-    asset_server: Res<AssetServer>,
-    ui_state: ResMut<UiState>,
-) {
+fn start_up(commands: Commands, asset_server: Res<AssetServer>, ui_state: ResMut<UiState>) {
     init_render_document(ui_state, commands, asset_server);
 }
 

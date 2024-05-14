@@ -8,6 +8,8 @@ use bean::node::{ElementText, Node};
 use bean::qaq;
 use bean::ui_state::UiState;
 use bevy::prelude::*;
+use component::input::add_input_component;
+use component::tag_component::DomComponent;
 use css::parse_css;
 use generate::NodeResult;
 use js_engine;
@@ -71,6 +73,8 @@ fn create_node(
     parent_id: Entity,
     style: CSSRule,
     bundle: NodeBundle,
+    mut dom: DomComponent,
+    asset_server: &Res<AssetServer>,
 ) -> Node {
     let mut el_data = Node {
         children: Vec::new(),
@@ -80,8 +84,18 @@ fn create_node(
         id: None,
         style_rules: None,
     };
-    let id = commands.spawn(bundle).id();
+    let id = commands
+        .spawn(bundle)
+        .insert(Interaction::Pressed)
+        .insert(Interaction::Hovered)
+        .id();
+    if tag == "input" {
+        let input_id = add_input_component(id, commands, &asset_server);
+        dom.id = Some(input_id.clone());
+    }
+
     commands.entity(parent_id).push_children(&vec![id.clone()]);
+    commands.entity(id).insert(dom);
     el_data.id = Some(id.clone());
     el_data.style_rules = Some(style);
     el_data
@@ -132,6 +146,8 @@ fn traverse_html(
                     parent_id,
                     component.get_style_sheet(),
                     component.get_bundle(),
+                    component.get_dom(),
+                    asset_server,
                 );
                 let id = el_data.id.unwrap();
                 let tmp = get_arc_node(el_data);
@@ -232,6 +248,34 @@ pub fn update_document_by_action(
             qaq::Action::AddStyleSheetAction(style) => {
                 action::add_style_sheet_action(style, &mut query);
             }
+        }
+    }
+}
+
+pub fn interaction_events(
+    mut interaction_query: Query<
+        (&Interaction, &Style, &BorderColor, Entity, &DomComponent),
+    >,
+    mut text_query: Query<&mut Text>,
+) {
+    for (interaction, _, _, _, dom) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                if dom.tag_name == "input" {
+                    if let Some(id) = dom.id {
+                        match text_query.get_mut(id) {
+                            Ok(mut text) => {
+                                text.sections[0].value = "Pressed".to_string();
+                            }
+                            Err(_) => {}
+                        };
+                    };
+                }
+            }
+            Interaction::Hovered => {
+                // println!("Hovered");
+            }
+            Interaction::None => {}
         }
     }
 }

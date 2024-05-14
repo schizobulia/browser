@@ -2,16 +2,14 @@ use std::{env, fs};
 
 fn main() {
     match env::current_dir() {
-        Ok(path) => {
-            match fs::read_to_string(path.join("script").join("index.js")) {
-                Ok(content) => {
-                    write_to_file(path, content);
-                }
-                Err(e) => {
-                    println!("The file could not be read: {}", e);
-                }
+        Ok(path) => match fs::read_to_string(path.join("script").join("index.js")) {
+            Ok(content) => {
+                write_to_file(path, content);
             }
-        }
+            Err(e) => {
+                println!("The file could not be read: {}", e);
+            }
+        },
         Err(e) => {
             println!("The current directory can't be retrieved: {}", e);
         }
@@ -30,7 +28,7 @@ fn write_to_file(path: std::path::PathBuf, content: String) {
     match fs::write(file_path, data) {
         Ok(_) => {
             println!("The js file was written successfully");
-        },
+        }
         Err(e) => {
             println!("The file could not be written: {}", e);
         }
