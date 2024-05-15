@@ -7,8 +7,10 @@ use bean::css::CSSRule;
 use bean::node::{ElementText, Node};
 use bean::qaq;
 use bean::ui_state::UiState;
+use bevy::input::keyboard::{Key, KeyboardInput};
+use bevy::input::ButtonState;
 use bevy::prelude::*;
-use component::input::add_input_component;
+use component::input::{add_input_component, focus_node_style};
 use component::tag_component::DomComponent;
 use css::parse_css;
 use generate::NodeResult;
@@ -253,19 +255,28 @@ pub fn update_document_by_action(
 }
 
 pub fn interaction_events(
-    mut interaction_query: Query<
-        (&Interaction, &Style, &BorderColor, Entity, &DomComponent),
-    >,
+    mut interaction_query: Query<(
+        &Interaction,
+        &mut Style,
+        &mut BorderColor,
+        Entity,
+        &DomComponent,
+    )>,
     mut text_query: Query<&mut Text>,
+    mut ui_state: ResMut<UiState>,
 ) {
-    for (interaction, _, _, _, dom) in &mut interaction_query {
+    for (interaction, mut style, mut border_color, _, dom) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
+                style.border = Default::default();
                 if dom.tag_name == "input" {
                     if let Some(id) = dom.id {
+                        ui_state.focus_node = Some(id.clone());
                         match text_query.get_mut(id) {
-                            Ok(mut text) => {
-                                text.sections[0].value = "Pressed".to_string();
+                            Ok(_) => {
+                                let (border, color) = focus_node_style();
+                                style.border = border;
+                                border_color.0 = color;
                             }
                             Err(_) => {}
                         };
@@ -276,6 +287,37 @@ pub fn interaction_events(
                 // println!("Hovered");
             }
             Interaction::None => {}
+        }
+    }
+}
+
+pub fn listen_keyboard_input_events(
+    mut events: EventReader<KeyboardInput>,
+    mut edit_text: Query<&mut Text>,
+    ui_state: ResMut<UiState>,
+) {
+    for event in events.read() {
+        if event.state == ButtonState::Released {
+            continue;
+        }
+        match ui_state.focus_node {
+            Some(id) => match edit_text.get_mut(id) {
+                Ok(mut text) => match &event.logical_key {
+                    Key::Enter => {}
+                    Key::Space => {
+                        text.sections[0].value.push(' ');
+                    }
+                    Key::Backspace => {
+                        text.sections[0].value.pop();
+                    }
+                    Key::Character(character) => {
+                        text.sections[0].value.push_str(character);
+                    }
+                    _ => continue,
+                },
+                Err(_) => {}
+            },
+            None => {}
         }
     }
 }

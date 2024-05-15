@@ -36,3 +36,13 @@ pub fn add_input_component(
         .push_children(&vec![childern_id.clone()]);
     childern_id
 }
+
+pub fn focus_node_style() -> (UiRect, Color) {
+    let border = UiRect {
+        left: Val::Px(1.3),
+        right: Val::Px(1.3),
+        top: Val::Px(1.3),
+        bottom: Val::Px(1.3),
+    };
+    (border, Color::BLUE)
+}

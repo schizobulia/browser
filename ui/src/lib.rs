@@ -3,7 +3,9 @@ use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use network::get_html_by_url;
-use renderer::{interaction_events, render_document, update_document_by_action};
+use renderer::{
+    interaction_events, listen_keyboard_input_events, render_document, update_document_by_action,
+};
 
 pub fn open_window() {
     App::new()
@@ -17,7 +19,12 @@ pub fn open_window() {
         // .add_systems(PreUpdate, pre_update)
         .add_systems(
             Update,
-            (update, update_document_by_action, interaction_events),
+            (
+                update,
+                update_document_by_action,
+                interaction_events,
+                listen_keyboard_input_events,
+            ),
         )
         // .add_systems(PostUpdate, post_update)
         // .add_systems(Last, last)
