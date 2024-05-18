@@ -1,8 +1,13 @@
 use bevy::prelude::*;
 
+pub fn default_border_color() -> Color {
+    
+    Color::BLACK
+}
+
 pub fn init_style(bundle: &mut NodeBundle, style: &mut Style, style_text_inner: &mut TextStyle) {
     bundle.background_color = BackgroundColor(Color::WHITE);
-    bundle.border_color = BorderColor(Color::BLACK);
+    bundle.border_color = BorderColor(default_border_color());
 
     style.width = Val::Px(147.0);
     style.height = Val::Px(13.0);

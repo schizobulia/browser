@@ -1,8 +1,7 @@
 use crate::component::input;
 use crate::css::{conversion_style, conversion_text_style};
 use bean::css::{CSSRule, SourceType};
-use bevy::ecs::component::Component;
-use bevy::ecs::entity::Entity;
+use bean::dom_component::DomComponent;
 use bevy::{
     render::color::Color,
     text::TextStyle,
@@ -11,11 +10,6 @@ use bevy::{
 };
 use std::collections::HashMap;
 
-#[derive(Component, Clone, Debug)]
-pub struct DomComponent {
-    pub id: Option<Entity>,
-    pub tag_name: String,
-}
 
 #[derive(Clone)]
 pub struct HTMLTagComponent {

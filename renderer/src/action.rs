@@ -1,20 +1,21 @@
+use std::collections::HashMap;
+
 use crate::qaq::ChangeText;
 use bean::css::CSSRule;
 use bean::qaq;
 use bean::{css::CSSStyleSheet, node::Node};
+use bevy::ecs::entity::Entity;
 use bevy::prelude::{Color, Query, Style, Text};
+use bevy::ui::BorderColor;
 
 /**
  * Modify the text in the node
  */
-pub fn change_text_action(query: &mut Query<(&mut Text, &mut Style)>, change_text: ChangeText) {
+pub fn change_text_action(query: &mut Query<&mut Text>, change_text: ChangeText) {
     let text = query.get_mut(change_text.id);
     match text {
-        Ok(mut nodes) => match nodes.0.sections.get_mut(0) {
-            Some(node) => {
-                node.value = change_text.value.clone();
-            }
-            None => {}
+        Ok(mut node) => {
+            node.sections[0].value = change_text.value.clone();
         },
         Err(err) => {
             println!("err: {:?}", err);
@@ -25,7 +26,7 @@ pub fn change_text_action(query: &mut Query<(&mut Text, &mut Style)>, change_tex
 /**
  * Add CSSStyleSheet
  */
-pub fn add_style_sheet_action(style: CSSStyleSheet, query: &mut Query<(&mut Text, &mut Style)>) {
+pub fn add_style_sheet_action(style: CSSStyleSheet, query: &mut Query<&mut Text>) {
     let node = qaq::GLOBAL_STATE.lock().unwrap();
     let rules = style.rules;
     for rule in rules.iter() {
@@ -45,15 +46,14 @@ pub fn add_style_sheet_action(style: CSSStyleSheet, query: &mut Query<(&mut Text
  * Change the style of the node
  */
 fn change_dom_style(
-    query: &mut Query<(&mut Text, &mut Style)>,
+    query: &mut Query<&mut Text>,
     node: &mut std::sync::Arc<std::sync::Mutex<Node>>,
     rules: CSSRule,
 ) {
     let n = node.lock().unwrap();
     match &n.text {
         Some(dom_text) => match query.get_mut(dom_text.id.unwrap()) {
-            Ok(nodes) => {
-                let mut text = nodes.0;
+            Ok(mut text) => {
                 for rule in rules.val.clone() {
                     let mut tag = true;
                     match n.style_rules.clone() {
@@ -93,5 +93,22 @@ fn change_dom_style(
             }
         },
         _ => {}
+    }
+}
+
+
+pub fn change_stlye_action(id: Entity, css: HashMap<String, String>, query: &mut Query<(&mut Style, &mut BorderColor, Entity)>) {
+    match query.get_mut(id) {
+        Ok(res) => {
+            let mut border_color = res.1;
+            for (key, _) in css.iter()  {
+                if key == "border-color" {
+                    border_color.0 = Color::BLACK;
+                }
+            }
+        },
+        Err(err) => {
+            println!("err change_stlye_action: {:?}", err);
+        }
     }
 }

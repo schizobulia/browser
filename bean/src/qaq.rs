@@ -33,6 +33,7 @@ pub struct ChangeText {
 pub enum Action {
     ChangeTextAction(ChangeText),
     AddStyleSheetAction(CSSStyleSheet),
+    ChangeStyleAction(Entity, HashMap<String, String>),
 }
 
 pub struct ActionQueue {

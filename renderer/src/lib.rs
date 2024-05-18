@@ -4,14 +4,14 @@ mod css;
 mod generate;
 
 use bean::css::CSSRule;
+use bean::dom_component::DomComponent;
 use bean::node::{ElementText, Node};
 use bean::qaq;
 use bean::ui_state::UiState;
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
-use bevy::prelude::*;
-use component::input::{add_input_component, focus_node_style};
-use component::tag_component::DomComponent;
+use bevy::{prelude::*};
+use component::input::{add_input_component, default_border_color, focus_node_style};
 use css::parse_css;
 use generate::NodeResult;
 use js_engine;
@@ -94,6 +94,8 @@ fn create_node(
     if tag == "input" {
         let input_id = add_input_component(id, commands, &asset_server);
         dom.id = Some(input_id.clone());
+    } else {
+        dom.id = Some(id.clone());
     }
 
     commands.entity(parent_id).push_children(&vec![id.clone()]);
@@ -237,18 +239,20 @@ fn inline_node(commands: &mut Commands) -> Option<Entity> {
  * All the updates about dom on the page are here.
  */
 pub fn update_document_by_action(
-    // mut query_text: Query<&mut Text>,
-    // mut query_style: Query<&mut Style>,
-    mut query: Query<(&mut Text, &mut Style)>,
+    mut query: Query<(&mut Style, &mut BorderColor, Entity)>,
+    mut text_query: Query<&mut Text>,
 ) {
     let mut binding_action = qaq::GLOBAL_ACTION.lock().unwrap();
     while binding_action.actions.len() > 0 {
         match binding_action.actions.remove(0) {
             qaq::Action::ChangeTextAction(change_text) => {
-                action::change_text_action(&mut query, change_text);
+                action::change_text_action(&mut text_query, change_text);
             }
             qaq::Action::AddStyleSheetAction(style) => {
-                action::add_style_sheet_action(style, &mut query);
+                action::add_style_sheet_action(style, &mut text_query);
+            }
+            qaq::Action::ChangeStyleAction(id, style) => {
+                action::change_stlye_action(id, style, &mut query);
             }
         }
     }
@@ -259,29 +263,31 @@ pub fn interaction_events(
         &Interaction,
         &mut Style,
         &mut BorderColor,
-        Entity,
         &DomComponent,
     )>,
-    mut text_query: Query<&mut Text>,
+    // mut text_query: Query<&mut Text>,
     mut ui_state: ResMut<UiState>,
 ) {
-    for (interaction, mut style, mut border_color, _, dom) in &mut interaction_query {
+    for (interaction, mut style, mut border_color, dom) in &mut interaction_query {
+        match ui_state.focus_node.clone() {
+            Some(focus_dom) => {
+                if dom.tag_name == "input" && focus_dom.tag_name != "input" {
+                    border_color.0 = default_border_color();
+                }
+            }
+            None => {}
+        }
+
         match *interaction {
             Interaction::Pressed => {
-                style.border = Default::default();
-                if dom.tag_name == "input" {
-                    if let Some(id) = dom.id {
-                        ui_state.focus_node = Some(id.clone());
-                        match text_query.get_mut(id) {
-                            Ok(_) => {
-                                let (border, color) = focus_node_style();
-                                style.border = border;
-                                border_color.0 = color;
-                            }
-                            Err(_) => {}
-                        };
-                    };
-                }
+                if let Some(_) = dom.id {
+                    ui_state.focus_node = Some(dom.clone());
+                    if dom.tag_name == "input" {
+                        let (border, color) = focus_node_style();
+                        style.border = border;
+                        border_color.0 = color;
+                    }
+                };
             }
             Interaction::Hovered => {
                 // println!("Hovered");
@@ -300,24 +306,45 @@ pub fn listen_keyboard_input_events(
         if event.state == ButtonState::Released {
             continue;
         }
-        match ui_state.focus_node {
-            Some(id) => match edit_text.get_mut(id) {
-                Ok(mut text) => match &event.logical_key {
-                    Key::Enter => {}
-                    Key::Space => {
-                        text.sections[0].value.push(' ');
+        match ui_state.focus_node.clone() {
+            Some(dom) => {
+                if let Some(id) = dom.id {
+                    match edit_text.get_mut(id) {
+                        Ok(mut text) => match &event.logical_key {
+                            Key::Enter => {}
+                            Key::Space => {
+                                text.sections[0].value.push(' ');
+                            }
+                            Key::Backspace => {
+                                text.sections[0].value.pop();
+                            }
+                            Key::Character(character) => {
+                                text.sections[0].value.push_str(character);
+                            }
+                            _ => continue,
+                        },
+                        Err(_) => {}
                     }
-                    Key::Backspace => {
-                        text.sections[0].value.pop();
-                    }
-                    Key::Character(character) => {
-                        text.sections[0].value.push_str(character);
-                    }
-                    _ => continue,
-                },
-                Err(_) => {}
-            },
+                }
+            }
             None => {}
         }
     }
 }
+
+// fn change_default_border(ui_state: &mut ResMut<UiState>, tmp_id: Entity) {
+//     if let Some(id) = ui_state.focus_node {
+//         if id != tmp_id {
+//             let mut tmp = HashMap::new();
+//             tmp.insert("border-color".to_string(), "black".to_string());
+//             match qaq::GLOBAL_ACTION.lock() {
+//                 Ok(mut n) => {
+//                     n.actions.push(qaq::Action::ChangeStyleAction(tmp_id, tmp.clone()));
+//                 },
+//                 Err(err) => {
+//                     println!("err: {:?}", err);
+//                 }
+//             }
+//         }
+//     }
+// }
