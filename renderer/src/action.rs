@@ -16,7 +16,7 @@ pub fn change_text_action(query: &mut Query<&mut Text>, change_text: ChangeText)
     match text {
         Ok(mut node) => {
             node.sections[0].value = change_text.value.clone();
-        },
+        }
         Err(err) => {
             println!("err: {:?}", err);
         }
@@ -96,17 +96,20 @@ fn change_dom_style(
     }
 }
 
-
-pub fn change_stlye_action(id: Entity, css: HashMap<String, String>, query: &mut Query<(&mut Style, &mut BorderColor, Entity)>) {
+pub fn change_stlye_action(
+    id: Entity,
+    css: HashMap<String, String>,
+    query: &mut Query<(&mut Style, &mut BorderColor, Entity)>,
+) {
     match query.get_mut(id) {
         Ok(res) => {
             let mut border_color = res.1;
-            for (key, _) in css.iter()  {
+            for (key, _) in css.iter() {
                 if key == "border-color" {
                     border_color.0 = Color::BLACK;
                 }
             }
-        },
+        }
         Err(err) => {
             println!("err change_stlye_action: {:?}", err);
         }

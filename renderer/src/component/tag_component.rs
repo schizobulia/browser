@@ -10,7 +10,6 @@ use bevy::{
 };
 use std::collections::HashMap;
 
-
 #[derive(Clone)]
 pub struct HTMLTagComponent {
     tag_name: String,

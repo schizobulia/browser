@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 
+use super::cursor::insert_cursor;
+
 pub fn default_border_color() -> Color {
-    
     Color::BLACK
 }
 
@@ -36,9 +37,10 @@ pub fn add_input_component(
         },
     );
     let childern_id = commands.spawn(text_bundle).id();
+    let cursor_id = insert_cursor(commands);
     commands
         .entity(parent_id)
-        .push_children(&vec![childern_id.clone()]);
+        .push_children(&vec![childern_id.clone(), cursor_id]);
     childern_id
 }
 

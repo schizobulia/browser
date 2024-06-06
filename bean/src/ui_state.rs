@@ -1,4 +1,4 @@
-use bevy::{prelude::Resource};
+use bevy::prelude::Resource;
 
 use crate::dom_component::DomComponent;
 
@@ -15,7 +15,7 @@ impl Default for UiState {
     fn default() -> Self {
         Self {
             name: "http://49.232.147.237/test/index.html".to_owned(),
-            focus_node: None
+            focus_node: None,
         }
     }
 }

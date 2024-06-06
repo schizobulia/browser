@@ -10,7 +10,9 @@ use bean::qaq;
 use bean::ui_state::UiState;
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::input::ButtonState;
-use bevy::{prelude::*};
+use bevy::prelude::*;
+use chrono::Utc;
+use component::cursor::Cursor;
 use component::input::{add_input_component, default_border_color, focus_node_style};
 use css::parse_css;
 use generate::NodeResult;
@@ -258,14 +260,29 @@ pub fn update_document_by_action(
     }
 }
 
+/**
+ * Update the cursor show
+ */
+pub fn update_cursor_show(mut query: Query<(&mut Cursor, &mut Visibility)>) {
+    let now = Utc::now().timestamp();
+    for (mut cursor, mut visibility) in query.iter_mut() {
+        if now - cursor.time < 1 {
+            continue;
+        } else {
+            cursor.time = now;
+        }
+        let tag = !cursor.show;
+        cursor.show = tag;
+        if tag {
+            *visibility = Visibility::Visible;
+        } else {
+            *visibility = Visibility::Hidden;
+        }
+    }
+}
+
 pub fn interaction_events(
-    mut interaction_query: Query<(
-        &Interaction,
-        &mut Style,
-        &mut BorderColor,
-        &DomComponent,
-    )>,
-    // mut text_query: Query<&mut Text>,
+    mut interaction_query: Query<(&Interaction, &mut Style, &mut BorderColor, &DomComponent)>,
     mut ui_state: ResMut<UiState>,
 ) {
     for (interaction, mut style, mut border_color, dom) in &mut interaction_query {
