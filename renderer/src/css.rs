@@ -84,9 +84,14 @@ pub fn parse_css(css: String) -> CSSStyleSheet {
 
 pub fn conversion_style(key: String, value: String, style: &mut Style) {
     match key.as_str() {
-        "width" => {
-            style.width = Val::Percent(value.parse::<f32>().unwrap());
-        }
+        "width" => match value.parse::<f32>() {
+            Ok(val) => {
+                style.width = Val::Percent(val);
+            }
+            Err(err) => {
+                println!("err conversion_style {:?}", err);
+            }
+        },
         "flex-direction" => {
             style.flex_direction = FlexDirection::Column;
         }

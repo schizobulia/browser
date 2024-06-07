@@ -91,7 +91,14 @@ fn update(
                         }
                         i += 1;
                     });
-                    qaq::GLOBAL_STATE.lock().unwrap().children.clear();
+                    match qaq::GLOBAL_STATE.lock() {
+                        Ok(mut node) => {
+                            node.children.clear();
+                        }
+                        Err(_) => {
+                            println!("Error: Deadlock");
+                        }
+                    }
                     init_render_document(ui_state, commands, asset_server)
                 }
             });

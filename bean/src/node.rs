@@ -34,7 +34,15 @@ impl Node {
         let indent = "  ".repeat(depth);
         println!("{}<{}>", indent, self.tag_name);
         for child in &self.children {
-            child.lock().unwrap().pretty_print(depth + 1);
+            match child.lock() {
+                Ok(data) => {
+                    data.pretty_print(depth + 1);
+                }
+                Err(_) => {
+                    println!("{}  <Error: Deadlock>", indent);
+                    continue;
+                }
+            }
         }
         if let Some(text) = &self.text {
             println!("{}  {}", indent, text.text);
@@ -45,12 +53,18 @@ impl Node {
     pub fn get_node_by_id(&self, id: u64) -> Option<Arc<Mutex<Node>>> {
         let mut queue = self.children.to_vec();
         while let Some(node_arc) = queue.pop() {
-            let node = node_arc.lock().unwrap();
-            if node.id == Some(set_u64_to_entity(id)) {
-                return Some(node_arc.clone());
+            match node_arc.lock() {
+                Ok(node) => {
+                    if node.id == Some(set_u64_to_entity(id)) {
+                        return Some(node_arc.clone());
+                    }
+                    // 将子节点添加到待访问列表
+                    queue.extend(node.children.iter().cloned());
+                }
+                Err(_) => {
+                    continue;
+                }
             }
-            // 将子节点添加到待访问列表
-            queue.extend(node.children.iter().cloned());
         }
         None
     }
@@ -58,16 +72,22 @@ impl Node {
     pub fn get_node_by_tag_id(&self, id: String) -> Option<Arc<Mutex<Node>>> {
         let mut queue = self.children.to_vec();
         while let Some(node_arc) = queue.pop() {
-            let node = node_arc.lock().unwrap();
-            if node
-                .attributes
-                .iter()
-                .any(|(key, value)| key == "id" && value == &id)
-            {
-                return Some(node_arc.clone());
+            match node_arc.lock() {
+                Ok(node) => {
+                    if node
+                        .attributes
+                        .iter()
+                        .any(|(key, value)| key == "id" && value == &id)
+                    {
+                        return Some(node_arc.clone());
+                    }
+                    // 将子节点添加到待访问列表
+                    queue.extend(node.children.iter().cloned());
+                }
+                Err(_) => {
+                    continue;
+                }
             }
-            // 将子节点添加到待访问列表
-            queue.extend(node.children.iter().cloned());
         }
         None
     }
@@ -77,14 +97,20 @@ impl Node {
         let mut nodes_to_visit = self.children.clone();
 
         while let Some(node_arc) = nodes_to_visit.pop() {
-            let node = node_arc.lock().unwrap();
-            if node.tag_name == tag_name {
-                if let Some(id) = node.id {
-                    matching_ids.push(id);
+            match node_arc.lock() {
+                Ok(node) => {
+                    if node.tag_name == tag_name {
+                        if let Some(id) = node.id {
+                            matching_ids.push(id);
+                        }
+                    }
+                    for child in &node.children {
+                        nodes_to_visit.push(child.clone());
+                    }
                 }
-            }
-            for child in &node.children {
-                nodes_to_visit.push(child.clone());
+                Err(_) => {
+                    continue;
+                }
             }
         }
         matching_ids
@@ -101,18 +127,6 @@ impl Node {
         value.to_string()
     }
 }
-
-// pub fn get_node_by_id(list: &mut Vec<Node>, id: Entity) -> Option<&mut Node> {
-//     let mut queue = list.iter_mut().collect::<Vec<_>>();
-//     while !queue.is_empty() {
-//         let node = queue.remove(0);
-//         if node.id.unwrap() == id {
-//             return Some(node);
-//         }
-//         queue.extend(node.children.iter_mut().collect::<Vec<_>>());
-//     }
-//     None
-// }
 
 pub fn set_u64_to_entity(id: u64) -> Entity {
     Entity::from_bits(id)

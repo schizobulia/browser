@@ -47,7 +47,6 @@ impl V8Runtime {
 #[op2(async)]
 async fn op_sum(#[serde] nums: Vec<f64>) -> Result<f64, deno_core::error::AnyError> {
     let sum = nums.iter().fold(0.0, |a, v| a + v);
-    // let node = get_children_by_tag_name("p", qaq::GLOBAL_STATE.lock().unwrap().children.as_mut());
     Ok(sum)
 }
 
@@ -58,17 +57,19 @@ async fn op_sum(#[serde] nums: Vec<f64>) -> Result<f64, deno_core::error::AnyErr
 #[op2]
 #[string]
 fn get_element_by_id(#[string] id: String) -> Result<String, deno_core::error::AnyError> {
-    let node = qaq::GLOBAL_STATE.lock().unwrap();
-    let list = node.get_node_by_tag_id(id);
-    let mut res: String = String::new();
-    match list {
-        Some(node) => {
-            let tmp = node.lock().unwrap().to_owned();
-            res = tmp.to_json();
+    match qaq::GLOBAL_STATE.lock() {
+        Ok(node) => {
+            let list = node.get_node_by_tag_id(id);
+            match list {
+                Some(node) => match node.lock() {
+                    Ok(tmp) => Ok(tmp.to_json()),
+                    Err(_) => Ok(String::new()),
+                },
+                None => Ok(String::new()),
+            }
         }
-        None => {}
+        Err(_) => Ok(String::new()),
     }
-    Ok(res)
 }
 
 /**
@@ -81,25 +82,43 @@ fn change_element_text(
     #[string] id: String,
     #[string] value: String,
 ) -> Result<String, deno_core::error::AnyError> {
-    let node = qaq::GLOBAL_STATE.lock().unwrap();
-    match node.get_node_by_id(id.parse().unwrap()) {
-        Some(data) => match data.lock() {
-            Ok(mut d) => match d.text {
-                Some(ref mut text) => {
-                    let mut binding_action = qaq::GLOBAL_ACTION.lock().unwrap();
-                    binding_action
-                        .actions
-                        .push(qaq::Action::ChangeTextAction(qaq::ChangeText {
-                            id: text.id.unwrap(),
-                            value: value.clone(),
-                        }));
-                    text.text = value;
+    match qaq::GLOBAL_STATE.lock() {
+        Ok(node) => match id.parse::<u64>() {
+            Ok(id_val) => {
+                if let Some(data) = node.get_node_by_id(id_val) {
+                    match data.lock() {
+                        Ok(mut d) => match d.text {
+                            Some(ref mut text) => match qaq::GLOBAL_ACTION.lock() {
+                                Ok(mut binding_action) => {
+                                    if let Some(i) = text.id {
+                                        binding_action.actions.push(qaq::Action::ChangeTextAction(
+                                            qaq::ChangeText {
+                                                id: i,
+                                                value: value.clone(),
+                                            },
+                                        ));
+                                        text.text = value;
+                                    }
+                                }
+                                Err(err) => {
+                                    println!("{:?}", err);
+                                }
+                            },
+                            None => {}
+                        },
+                        Err(err) => {
+                            println!("{:?}", err);
+                        }
+                    }
                 }
-                None => {}
-            },
-            Err(_) => {}
+            }
+            Err(err) => {
+                println!("{:?}", err);
+            }
         },
-        None => {}
+        Err(err) => {
+            println!("{:?}", err);
+        }
     };
     Ok(String::new())
 }

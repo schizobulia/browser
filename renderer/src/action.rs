@@ -27,19 +27,25 @@ pub fn change_text_action(query: &mut Query<&mut Text>, change_text: ChangeText)
  * Add CSSStyleSheet
  */
 pub fn add_style_sheet_action(style: CSSStyleSheet, query: &mut Query<&mut Text>) {
-    let node = qaq::GLOBAL_STATE.lock().unwrap();
-    let rules = style.rules;
-    for rule in rules.iter() {
-        match node.get_node_by_tag_id(rule.selector[1..].to_string()) {
-            Some(mut n) => {
-                if rule.val.len() != 0 {
-                    change_dom_style(query, &mut n, rule.clone());
+    match qaq::GLOBAL_STATE.lock() {
+        Ok(node) => {
+            let rules = style.rules;
+            for rule in rules.iter() {
+                match node.get_node_by_tag_id(rule.selector[1..].to_string()) {
+                    Some(mut n) => {
+                        if rule.val.len() != 0 {
+                            change_dom_style(query, &mut n, rule.clone());
+                        }
+                    }
+                    None => {}
                 }
             }
-            None => {}
+            drop(node);
+        }
+        Err(err) => {
+            println!("add_style_sheet_action : {:?}", err);
         }
     }
-    drop(node);
 }
 
 /**
@@ -50,50 +56,57 @@ fn change_dom_style(
     node: &mut std::sync::Arc<std::sync::Mutex<Node>>,
     rules: CSSRule,
 ) {
-    let n = node.lock().unwrap();
-    match &n.text {
-        Some(dom_text) => match query.get_mut(dom_text.id.unwrap()) {
-            Ok(mut text) => {
-                for rule in rules.val.clone() {
-                    let mut tag = true;
-                    match n.style_rules.clone() {
-                        Some(list) => {
-                            if list.val.get(rule.0.as_str()).is_some() {
-                                match list.source {
-                                    bean::css::SourceType::Inline => {
-                                        tag = false;
+    match node.lock() {
+        Ok(n) => {
+            if let Some(dom_text) = &n.text {
+                if let Some(id) = dom_text.id {
+                    match query.get_mut(id) {
+                        Ok(mut text) => {
+                            for rule in rules.val.clone() {
+                                let mut tag = true;
+                                match n.style_rules.clone() {
+                                    Some(list) => {
+                                        if list.val.get(rule.0.as_str()).is_some() {
+                                            match list.source {
+                                                bean::css::SourceType::Inline => {
+                                                    tag = false;
+                                                }
+                                                _ => {}
+                                            }
+                                        }
                                     }
                                     _ => {}
                                 }
+                                if tag {
+                                    match rule.0.as_str() {
+                                        "color" => match Color::hex(rule.1) {
+                                            Ok(color) => {
+                                                text.sections[0].style.color = color;
+                                            }
+                                            _ => {}
+                                        },
+                                        "font-size" => match rule.1.parse::<f32>() {
+                                            Ok(size) => {
+                                                text.sections[0].style.font_size = size;
+                                            }
+                                            _ => {}
+                                        },
+                                        _ => {}
+                                    }
+                                }
                             }
                         }
-                        _ => {}
-                    }
-                    if tag {
-                        match rule.0.as_str() {
-                            "color" => match Color::hex(rule.1) {
-                                Ok(color) => {
-                                    text.sections[0].style.color = color;
-                                }
-                                _ => {}
-                            },
-                            "font-size" => match rule.1.parse::<f32>() {
-                                Ok(size) => {
-                                    text.sections[0].style.font_size = size;
-                                }
-                                _ => {}
-                            },
-                            _ => {}
+                        Err(err) => {
+                            println!("err change_dom_style: {:?}", err);
                         }
                     }
                 }
-            }
-            Err(err) => {
-                println!("err change_dom_style: {:?}", err);
-            }
-        },
-        _ => {}
-    }
+            };
+        }
+        Err(err) => {
+            println!("err change_dom_style: {:?}", err);
+        }
+    };
 }
 
 pub fn change_stlye_action(

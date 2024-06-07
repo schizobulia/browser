@@ -63,6 +63,5 @@
 //         ];
 
 //         let node = get_node_by_id(&mut nodes, Entity::from_raw(2));
-//         assert_eq!(node.unwrap().tag_name, "span");
 //     }
 // }

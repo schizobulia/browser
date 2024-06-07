@@ -12,7 +12,9 @@ pub enum NodeResult {
 fn get_script_res(element: ElementRef) -> NodeResult {
     let mut script = String::new();
     for child in element.children() {
-        script.push_str(child.value().as_text().unwrap());
+        if let Some(val) = child.value().as_text() {
+            script.push_str(val);
+        }
     }
     return NodeResult::Script(script);
 }
@@ -20,7 +22,9 @@ fn get_script_res(element: ElementRef) -> NodeResult {
 fn get_style_res(element: ElementRef) -> NodeResult {
     let mut style: String = String::new();
     for child in element.children() {
-        style.push_str(child.value().as_text().unwrap());
+        if let Some(val) = child.value().as_text() {
+            style.push_str(val);
+        }
     }
     return NodeResult::Style(style);
 }

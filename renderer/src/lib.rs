@@ -55,16 +55,25 @@ pub fn render_document(
     );
 
     for style in styles {
-        qaq::GLOBAL_ACTION
-            .lock()
-            .unwrap()
-            .actions
-            .push(qaq::Action::AddStyleSheetAction(parse_css(style)));
+        match qaq::GLOBAL_ACTION.lock() {
+            Ok(mut n) => {
+                n.actions
+                    .push(qaq::Action::AddStyleSheetAction(parse_css(style)));
+            }
+            Err(err) => {
+                println!("err: {:?}", err);
+                continue;
+            }
+        }
     }
-
-    // let binding = qaq::GLOBAL_STATE.lock().unwrap().to_owned();
-    // binding.pretty_print(0);
-    // drop(binding);
+    // match qaq::GLOBAL_STATE.lock() {
+    //     Ok(root_node) => {
+    //         root_node.pretty_print(0);
+    //     }
+    //     Err(err) => {
+    //         println!("err: {:?}", err);
+    //     }
+    // }
 }
 
 /**
@@ -126,92 +135,108 @@ fn traverse_html(
         id: Some(root_id),
         style_rules: None,
     };
-    let mut root_node = qaq::GLOBAL_STATE.lock().unwrap();
-    let html_tmp = get_arc_node(root_html);
-    root_node.children.push(html_tmp.clone());
-    drop(root_node);
-    let mut inline_id = None;
-    let mut stack = vec![(element, html_tmp)];
-    while let Some((element, parent_node)) = stack.pop() {
-        let tag = element.value().name().to_string();
-        let res: NodeResult = generate::get_node_result(element, tag.clone());
+    match qaq::GLOBAL_STATE.lock() {
+        Ok(mut root_node) => {
+            let html_tmp = get_arc_node(root_html);
+            root_node.children.push(html_tmp.clone());
+            drop(root_node);
+            let mut inline_id = None;
+            let mut stack = vec![(element, html_tmp)];
+            while let Some((element, parent_node)) = stack.pop() {
+                let tag = element.value().name().to_string();
+                let res: NodeResult = generate::get_node_result(element, tag.clone());
 
-        match res {
-            NodeResult::Script(script) => {
-                js_runtime.eval(Box::leak(script.clone().into_boxed_str()));
-            }
-            NodeResult::Style(style) => {
-                styles.push(style);
-            }
-            NodeResult::Component(mut component) => {
-                let parent_id = parent_node.lock().unwrap().id.unwrap().clone();
-                let el_data: Node = create_node(
-                    tag.clone(),
-                    component.get_attributes(),
-                    commands,
-                    parent_id,
-                    component.get_style_sheet(),
-                    component.get_bundle(),
-                    component.get_dom(),
-                    asset_server,
-                );
-                let id = el_data.id.unwrap();
-                let tmp = get_arc_node(el_data);
-                parent_node.lock().unwrap().children.push(tmp.clone());
-                if component.block_inline() == "inline" {
-                    if inline_id.is_some() {
-                        commands
-                            .entity(inline_id.unwrap())
-                            .push_children(&vec![id.clone()]);
-                    } else {
-                        inline_id = inline_node(commands);
-                        commands
-                            .entity(inline_id.unwrap())
-                            .push_children(&vec![id.clone()]);
-                        commands
-                            .entity(parent_id)
-                            .push_children(&vec![inline_id.unwrap()]);
+                match res {
+                    NodeResult::Script(script) => {
+                        js_runtime.eval(Box::leak(script.clone().into_boxed_str()));
                     }
-                } else {
-                    if inline_id.is_some() {
-                        inline_id = None;
+                    NodeResult::Style(style) => {
+                        styles.push(style);
                     }
-                }
-                for child in element.children().rev() {
-                    if let Some(child_element) = ElementRef::wrap(child) {
-                        stack.push((child_element.clone(), tmp.clone()));
-                    } else if child.value().is_text() {
-                        let text = child
-                            .value()
-                            .as_text()
-                            .unwrap()
-                            .to_string()
-                            .trim()
-                            .to_string();
-                        if text == "" {
-                            continue;
+                    NodeResult::Component(mut component) => match parent_node.lock() {
+                        Ok(mut parent_n) => {
+                            if let Some(parent_id) = parent_n.id {
+                                let el_data: Node = create_node(
+                                    tag.clone(),
+                                    component.get_attributes(),
+                                    commands,
+                                    parent_id,
+                                    component.get_style_sheet(),
+                                    component.get_bundle(),
+                                    component.get_dom(),
+                                    asset_server,
+                                );
+                                if let Some(id) = el_data.id {
+                                    let tmp = get_arc_node(el_data);
+                                    parent_n.children.push(tmp.clone());
+                                    if component.block_inline() == "inline" {
+                                        if let Some(i_id) = inline_id {
+                                            commands.entity(i_id).push_children(&vec![id.clone()]);
+                                        } else {
+                                            if let Some(n_id) = inline_node(commands) {
+                                                inline_id = Some(n_id.clone());
+                                                commands
+                                                    .entity(n_id)
+                                                    .push_children(&vec![id.clone()]);
+                                                commands
+                                                    .entity(parent_id)
+                                                    .push_children(&vec![n_id]);
+                                            }
+                                        }
+                                    } else {
+                                        if inline_id.is_some() {
+                                            inline_id = None;
+                                        }
+                                    }
+                                    for child in element.children().rev() {
+                                        if let Some(child_element) = ElementRef::wrap(child) {
+                                            stack.push((child_element.clone(), tmp.clone()));
+                                        } else if child.value().is_text() {
+                                            if let Some(t) = child.value().as_text() {
+                                                let text = t.to_string().trim().to_string();
+                                                if text == "" {
+                                                    continue;
+                                                }
+                                                let text_bundle = TextBundle::from_section(
+                                                    text.clone(),
+                                                    TextStyle {
+                                                        font: asset_server
+                                                            .load("fonts/FiraMono-Medium.ttf"),
+                                                        ..component.get_style_text_inner()
+                                                    },
+                                                );
+                                                let childern_id = commands.spawn(text_bundle).id();
+                                                commands
+                                                    .entity(id)
+                                                    .push_children(&vec![childern_id.clone()]);
+                                                match tmp.lock() {
+                                                    Ok(mut source_tmp) => {
+                                                        source_tmp.text = Some(ElementText {
+                                                            id: Some(childern_id),
+                                                            text: text,
+                                                        });
+                                                    }
+                                                    Err(err) => {
+                                                        println!("err: {:?}", err);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
-                        let text_bundle = TextBundle::from_section(
-                            text,
-                            TextStyle {
-                                font: asset_server.load("fonts/FiraMono-Medium.ttf"),
-                                ..component.get_style_text_inner()
-                            },
-                        );
-                        let childern_id = commands.spawn(text_bundle).id();
-                        commands
-                            .entity(id)
-                            .push_children(&vec![childern_id.clone()]);
-                        tmp.lock().unwrap().text = Some(ElementText {
-                            id: Some(childern_id),
-                            text: child.value().as_text().unwrap().to_string(),
-                        });
-                    }
-                }
+                        Err(err) => {
+                            println!("err traverse_html : {:?}", err);
+                        }
+                    },
+                };
             }
-        };
+        }
+        Err(err) => {
+            println!("err traverse_html : {:?}", err);
+        }
     }
-
     styles
 }
 
@@ -244,18 +269,24 @@ pub fn update_document_by_action(
     mut query: Query<(&mut Style, &mut BorderColor, Entity)>,
     mut text_query: Query<&mut Text>,
 ) {
-    let mut binding_action = qaq::GLOBAL_ACTION.lock().unwrap();
-    while binding_action.actions.len() > 0 {
-        match binding_action.actions.remove(0) {
-            qaq::Action::ChangeTextAction(change_text) => {
-                action::change_text_action(&mut text_query, change_text);
+    match qaq::GLOBAL_ACTION.lock() {
+        Ok(mut binding_action) => {
+            while binding_action.actions.len() > 0 {
+                match binding_action.actions.remove(0) {
+                    qaq::Action::ChangeTextAction(change_text) => {
+                        action::change_text_action(&mut text_query, change_text);
+                    }
+                    qaq::Action::AddStyleSheetAction(style) => {
+                        action::add_style_sheet_action(style, &mut text_query);
+                    }
+                    qaq::Action::ChangeStyleAction(id, style) => {
+                        action::change_stlye_action(id, style, &mut query);
+                    }
+                }
             }
-            qaq::Action::AddStyleSheetAction(style) => {
-                action::add_style_sheet_action(style, &mut text_query);
-            }
-            qaq::Action::ChangeStyleAction(id, style) => {
-                action::change_stlye_action(id, style, &mut query);
-            }
+        }
+        Err(err) => {
+            println!("err update_document_by_action : {:?}", err);
         }
     }
 }
