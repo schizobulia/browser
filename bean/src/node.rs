@@ -1,4 +1,4 @@
-use crate::css::CSSRule;
+use crate::css::CSSStyleSheet;
 use bevy::prelude::Entity;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -17,7 +17,7 @@ pub struct Node {
     pub attributes: HashMap<String, String>,
     pub text: Option<ElementText>,
     pub id: Option<Entity>,
-    pub style_rules: Option<CSSRule>,
+    pub style_rules: Option<CSSStyleSheet>,
 }
 
 /**

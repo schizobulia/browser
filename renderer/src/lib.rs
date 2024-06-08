@@ -3,7 +3,7 @@ mod component;
 mod css;
 mod generate;
 
-use bean::css::CSSRule;
+use bean::css::{CSSStyleSheet, SourceType};
 use bean::dom_component::DomComponent;
 use bean::node::{ElementText, Node};
 use bean::qaq;
@@ -57,8 +57,10 @@ pub fn render_document(
     for style in styles {
         match qaq::GLOBAL_ACTION.lock() {
             Ok(mut n) => {
-                n.actions
-                    .push(qaq::Action::AddStyleSheetAction(parse_css(style)));
+                n.actions.push(qaq::Action::AddStyleSheetAction(parse_css(
+                    style,
+                    SourceType::StyleTag,
+                )));
             }
             Err(err) => {
                 println!("err: {:?}", err);
@@ -84,7 +86,7 @@ fn create_node(
     attributes: HashMap<String, String>,
     commands: &mut Commands,
     parent_id: Entity,
-    style: CSSRule,
+    style: CSSStyleSheet,
     bundle: NodeBundle,
     mut dom: DomComponent,
     asset_server: &Res<AssetServer>,

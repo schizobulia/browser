@@ -66,26 +66,28 @@ fn change_dom_style(
                                 let mut tag = true;
                                 match n.style_rules.clone() {
                                     Some(list) => {
-                                        if list.val.get(rule.0.as_str()).is_some() {
-                                            match list.source {
-                                                bean::css::SourceType::Inline => {
+                                        list.rules.iter().for_each(|x| match x.source {
+                                            bean::css::SourceType::Inline => {
+                                                let res =
+                                                    x.val.keys().find(|x| x == &rule.0.as_str());
+                                                if let Some(_) = res {
                                                     tag = false;
-                                                }
-                                                _ => {}
+                                                };
                                             }
-                                        }
+                                            _ => {}
+                                        });
                                     }
                                     _ => {}
                                 }
                                 if tag {
                                     match rule.0.as_str() {
-                                        "color" => match Color::hex(rule.1) {
+                                        "color" => match Color::hex(rule.1.value) {
                                             Ok(color) => {
                                                 text.sections[0].style.color = color;
                                             }
                                             _ => {}
                                         },
-                                        "font-size" => match rule.1.parse::<f32>() {
+                                        "font-size" => match rule.1.value.parse::<f32>() {
                                             Ok(size) => {
                                                 text.sections[0].style.font_size = size;
                                             }

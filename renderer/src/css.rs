@@ -1,15 +1,14 @@
 use std::collections::HashMap;
 
-use bean::css::{CSSRule, CSSStyleSheet, SourceType};
+use bean::css::{CSSRule, CSSStyleSheet, CssVal, SourceType};
 use bevy::render::color::Color;
-use bevy::ui::{FlexDirection, Style, Val};
-use bevy::utils::default;
+use bevy::ui::Val;
 use cssparser::*;
 
 /**
  * Parse css
  */
-pub fn parse_css(css: String) -> CSSStyleSheet {
+pub fn parse_css(css: String, source_type: SourceType) -> CSSStyleSheet {
     let mut input = ParserInput::new(css.as_str());
     let mut parser = Parser::new(&mut input);
     let mut selector: String = String::new();
@@ -22,9 +21,9 @@ pub fn parse_css(css: String) -> CSSStyleSheet {
             }
             Token::SquareBracketBlock => (Token::CloseSquareBracket, String::new()),
             Token::CurlyBracketBlock => {
-                css_rule.source = SourceType::StyleTag;
                 css_rule.val = HashMap::new();
                 css_rule = CSSRule::new();
+                css_rule.source = source_type.clone();
                 (
                     Token::CloseCurlyBracket,
                     selector.clone().trim().to_string(),
@@ -45,7 +44,12 @@ pub fn parse_css(css: String) -> CSSStyleSheet {
                         if key.is_empty() {
                             key = ident.to_string();
                         } else {
-                            css_rule.val.insert(key.clone(), color_to_hex(&ident));
+                            let css_val = CssVal {
+                                has_sign: false,
+                                value: color_to_hex(&ident),
+                                unit: String::new(),
+                            };
+                            css_rule.val.insert(key.clone(), css_val);
                         }
                     }
                     Token::Colon => {
@@ -63,11 +67,12 @@ pub fn parse_css(css: String) -> CSSStyleSheet {
                         unit,
                     } => {
                         let _ = int_value;
-                        let _ = unit;
-                        css_rule.val.insert(
-                            key.clone(),
-                            format!("{}{}", if has_sign.clone() { "" } else { "" }, value),
-                        );
+                        let css_val = CssVal {
+                            has_sign: *has_sign,
+                            value: value.to_string(),
+                            unit: unit.to_string(),
+                        };
+                        css_rule.val.insert(key.clone(), css_val);
                     }
                     _ => {
                         continue;
@@ -78,24 +83,8 @@ pub fn parse_css(css: String) -> CSSStyleSheet {
         });
         rules.push(css_rule.clone());
     }
-    CSSStyleSheet { rules }
-}
 
-pub fn conversion_style(key: String, value: String, style: &mut Style) {
-    match key.as_str() {
-        "width" => match value.parse::<f32>() {
-            Ok(val) => {
-                style.width = Val::Percent(val);
-            }
-            Err(err) => {
-                println!("err conversion_style {:?}", err);
-            }
-        },
-        "flex-direction" => {
-            style.flex_direction = FlexDirection::Column;
-        }
-        _ => default(),
-    }
+    CSSStyleSheet { rules }
 }
 
 /**
@@ -167,4 +156,25 @@ fn rgba_to_hex(r: f32, g: f32, b: f32, a: f32) -> String {
 fn color_to_hex(color_name: &str) -> String {
     let color: Color = get_color_by_style(color_name.to_string());
     rgba_to_hex(color.r(), color.g(), color.b(), color.a())
+}
+
+/**
+ * 1px -> Val::Px(1.0)
+ * 1vw -> Val::Vw(1.0)
+ * 1vh -> Val::Vh(1.0)
+ * 1vmin -> Val::VMin(1.0)
+ * 1vmax -> Val::VMax(1.0)
+ */
+pub fn get_element_unit(value: String, unit: String) -> Val {
+    match value.parse::<f32>() {
+        Ok(val) => match unit.as_str() {
+            "px" => Val::Px(val),
+            "vw" => Val::Vw(val),
+            "vh" => Val::Vh(val),
+            "vmin" => Val::VMin(val),
+            "vmax" => Val::VMax(val),
+            _ => Val::Auto,
+        },
+        Err(_) => Val::Auto,
+    }
 }

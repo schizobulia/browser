@@ -18,8 +18,15 @@ pub enum SourceType {
 pub struct CSSRule {
     pub source: SourceType,
     pub selector: String,
-    pub val: HashMap<String, String>,
+    pub val: HashMap<String, CssVal>,
     pub css_text: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CssVal {
+    pub has_sign: bool,
+    pub value: String,
+    pub unit: String,
 }
 
 impl CSSRule {
@@ -39,4 +46,10 @@ impl CSSRule {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CSSStyleSheet {
     pub rules: Vec<CSSRule>,
+}
+
+impl CSSStyleSheet {
+    pub fn new() -> Self {
+        Self { rules: Vec::new() }
+    }
 }

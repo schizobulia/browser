@@ -1,6 +1,6 @@
 use crate::component::input;
-use crate::css::{conversion_style, get_color_by_style};
-use bean::css::{CSSRule, SourceType};
+use crate::css::{get_color_by_style, get_element_unit, parse_css};
+use bean::css::{CSSStyleSheet, CssVal, SourceType};
 use bean::dom_component::DomComponent;
 use bevy::{
     render::color::Color,
@@ -14,7 +14,7 @@ use std::collections::HashMap;
 pub struct HTMLTagComponent {
     tag_name: String,
     pub style: Style,
-    styl_sheet: CSSRule,
+    styl_sheet: CSSStyleSheet,
     attributes: HashMap<String, String>,
     style_text_inner: TextStyle,
     bundle: NodeBundle,
@@ -29,7 +29,7 @@ impl HTMLTagComponent {
             style: Style {
                 ..Default::default()
             },
-            styl_sheet: CSSRule::new(),
+            styl_sheet: CSSStyleSheet::new(),
             style_text_inner: TextStyle {
                 color: Color::BLACK,
                 ..default()
@@ -71,32 +71,13 @@ impl HTMLTagComponent {
         let style_val = self.attributes.get("style");
         match style_val {
             Some(style) => {
-                let style_arr = style.split(";");
-                style_arr.for_each(|item| {
-                    let item_arr = item.split(":").collect::<Vec<&str>>();
-                    match item_arr.get(0) {
-                        Some(key) => match item_arr.get(1) {
-                            Some(val) => {
-                                self.styl_sheet.val.insert(key.to_string(), val.to_string());
-                                if key.to_string() == "width" {
-                                    conversion_style(
-                                        key.to_string(),
-                                        val.to_string(),
-                                        &mut self.style,
-                                    );
-                                }
-                                if key.to_string() == "color" {
-                                    self.style_text_inner.color =
-                                        get_color_by_style(val.trim().to_string());
-                                }
-                            }
-                            None => {}
-                        },
-                        None => {}
+                for item in parse_css(format!("{}{}{}", "{", style, "}"), SourceType::Inline).rules
+                {
+                    self.styl_sheet.rules.push(item.clone());
+                    for i in item.val {
+                        set_style(i.0, i.1, &mut self.style_text_inner, &mut self.style);
                     }
-                    self.styl_sheet.selector = String::new();
-                    self.styl_sheet.source = SourceType::Inline;
-                });
+                }
             }
             None => {}
         }
@@ -125,7 +106,7 @@ impl HTMLTagComponent {
         self.attributes.clone()
     }
 
-    pub fn get_style_sheet(&self) -> CSSRule {
+    pub fn get_style_sheet(&self) -> CSSStyleSheet {
         self.styl_sheet.clone()
     }
 
@@ -140,4 +121,22 @@ impl HTMLTagComponent {
     pub fn get_dom(&self) -> DomComponent {
         self.dom.clone()
     }
+}
+
+fn set_style(key: String, val: CssVal, style_text_inner: &mut TextStyle, style: &mut Style) {
+    match key.as_str() {
+        "width" => {
+            style.width = get_element_unit(val.value, val.unit);
+        }
+        "height" => {
+            style.height = get_element_unit(val.value, val.unit);
+        }
+        "color" => {
+            style_text_inner.color = get_color_by_style(val.value.trim().to_string());
+        }
+        "flex-direction" => {
+            style.flex_direction = FlexDirection::Column;
+        }
+        _ => {}
+    };
 }
