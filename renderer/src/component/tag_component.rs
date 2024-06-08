@@ -1,5 +1,5 @@
 use crate::component::input;
-use crate::css::{conversion_style, conversion_text_style};
+use crate::css::{conversion_style, get_color_by_style};
 use bean::css::{CSSRule, SourceType};
 use bean::dom_component::DomComponent;
 use bevy::{
@@ -86,11 +86,8 @@ impl HTMLTagComponent {
                                     );
                                 }
                                 if key.to_string() == "color" {
-                                    conversion_text_style(
-                                        key.to_string(),
-                                        val.trim().to_string(),
-                                        &mut self.style_text_inner,
-                                    );
+                                    self.style_text_inner.color =
+                                        get_color_by_style(val.trim().to_string());
                                 }
                             }
                             None => {}
