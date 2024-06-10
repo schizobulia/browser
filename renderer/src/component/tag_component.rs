@@ -10,6 +10,8 @@ use bevy::{
 };
 use std::collections::HashMap;
 
+use super::img;
+
 #[derive(Clone)]
 pub struct HTMLTagComponent {
     tag_name: String,
@@ -58,12 +60,18 @@ impl HTMLTagComponent {
     }
 
     fn init_built_component(&mut self) {
-        if self.tag_name == "input" {
-            input::init_style(
-                &mut self.bundle,
-                &mut self.style,
-                &mut self.style_text_inner,
-            );
+        match self.tag_name.as_str() {
+            "input" => {
+                input::init_style(
+                    &mut self.bundle,
+                    &mut self.style,
+                    &mut self.style_text_inner,
+                );
+            }
+            "img" => {
+                img::init_style();
+            }
+            _ => {}
         }
     }
 

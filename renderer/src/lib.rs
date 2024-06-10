@@ -13,6 +13,7 @@ use bevy::input::ButtonState;
 use bevy::prelude::*;
 use chrono::Utc;
 use component::cursor::Cursor;
+use component::img;
 use component::input::{add_input_component, default_border_color, focus_node_style};
 use css::parse_css;
 use generate::NodeResult;
@@ -94,7 +95,7 @@ fn create_node(
     let mut el_data = Node {
         children: Vec::new(),
         tag_name: tag.clone(),
-        attributes: attributes,
+        attributes: attributes.clone(),
         text: None,
         id: None,
         style_rules: None,
@@ -104,11 +105,18 @@ fn create_node(
         .insert(Interaction::Pressed)
         .insert(Interaction::Hovered)
         .id();
-    if tag == "input" {
-        let input_id = add_input_component(id, commands, &asset_server);
-        dom.id = Some(input_id.clone());
-    } else {
-        dom.id = Some(id.clone());
+    match tag.as_str() {
+        "input" => {
+            let input_id = add_input_component(id, commands, &asset_server);
+            dom.id = Some(input_id.clone());
+        }
+        "img" => {
+            let img_id = img::add_img_component(id, commands, attributes, asset_server);
+            dom.id = Some(img_id.clone());
+        }
+        _ => {
+            dom.id = Some(id.clone());
+        }
     }
 
     commands.entity(parent_id).push_children(&vec![id.clone()]);

@@ -1,14 +1,8 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+use std::{env, path::PathBuf};
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+pub fn get_asset_network_path() -> Option<PathBuf> {
+    match env::current_dir() {
+        Ok(path) => Some(path.join("browser").join("assets").join("network")),
+        Err(_) => None,
     }
 }
