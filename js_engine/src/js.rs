@@ -1,5 +1,4 @@
-pub fn get_init_js_code() -> &'static str {
-    return "class Element {
+pub fn get_init_js_code() -> &'static str {return "class Element {
     constructor(tag, innerText, _id) {
         this.tag = tag;
         this._id = _id
@@ -28,5 +27,4 @@ globalThis.document = {
         }
         return undefined
     }
-}";
-}
+}"; }

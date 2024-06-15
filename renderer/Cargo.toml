@@ -16,4 +16,5 @@ serde_json = "1.0.116"
 chrono = "0.4.38"
 network = { path = "../network" }
 cache = { path = "../cache" }
+image = "0.24.0"
 md5 = "0.7.0"
