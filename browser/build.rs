@@ -1,4 +1,5 @@
 use std::{env, fs, io, path::Path};
+
 fn main() {
     match env::current_dir() {
         Ok(path) => {
@@ -13,6 +14,7 @@ fn main() {
                     }
                 }
             } else {
+                #[cfg(not(debug_assertions))]
                 match remove_dir_contents(network_dir.clone()) {
                     Ok(_) => {
                         println!("The network directory was cleaned successfully");
@@ -29,6 +31,7 @@ fn main() {
     }
 }
 
+#[allow(dead_code)]
 fn remove_dir_contents<P: AsRef<Path>>(path: P) -> io::Result<()> {
     for entry in fs::read_dir(path)? {
         let entry = entry?;

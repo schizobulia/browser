@@ -2,8 +2,15 @@
 name = "browser"
 version = "0.1.0"
 edition = "2021"
+description = "A browser (toy)"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 ui = { path = "../ui" }
+cargo-bundle = "0.6.0"
+
+[package.metadata.bundle]
+name = "browser"
+identifier = "schizobulia.browser"
+resources = ["assets"]
