@@ -4,10 +4,9 @@ use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use network::get_html_by_url;
 use renderer::{
-    interaction_events, listen_keyboard_input_events, render_document, update_cursor_show,
-    update_document_by_action,
+    component::video::render_video_frame, interaction_events, listen_keyboard_input_events,
+    render_document, update_cursor_show, update_document_by_action,
 };
-
 pub fn open_window() {
     App::new()
         .init_resource::<UiState>()
@@ -26,6 +25,7 @@ pub fn open_window() {
                 interaction_events,
                 listen_keyboard_input_events,
                 update_cursor_show,
+                render_video_frame,
             ),
         )
         // .add_systems(PostUpdate, post_update)

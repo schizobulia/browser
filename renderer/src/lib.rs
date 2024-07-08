@@ -1,5 +1,5 @@
 mod action;
-mod component;
+pub mod component;
 mod css;
 mod generate;
 
@@ -13,8 +13,8 @@ use bevy::input::ButtonState;
 use bevy::prelude::*;
 use chrono::Utc;
 use component::cursor::Cursor;
-use component::img;
 use component::input::{add_input_component, default_border_color, focus_node_style};
+use component::{img, video};
 use css::parse_css;
 use generate::NodeResult;
 use js_engine;
@@ -114,6 +114,10 @@ fn create_node(
             let img_id = img::add_img_component(id, commands, attributes, asset_server);
             dom.id = Some(img_id.clone());
         }
+        "video" => {
+            let video_id = video::add_video_component(id, asset_server, commands, attributes);
+            dom.id = Some(video_id.clone());
+        }
         _ => {
             dom.id = Some(id.clone());
         }
@@ -199,6 +203,10 @@ fn traverse_html(
                                         }
                                     }
                                     for child in element.children().rev() {
+                                        if tag == "video" {
+                                            // video 子元素无需生成dom
+                                            break;
+                                        }
                                         if let Some(child_element) = ElementRef::wrap(child) {
                                             stack.push((child_element.clone(), tmp.clone()));
                                         } else if child.value().is_text() {

@@ -1,3 +1,4 @@
+use crate::component::video::get_source_element;
 use scraper::ElementRef;
 use std::collections::HashMap;
 
@@ -42,6 +43,9 @@ pub fn get_node_result(element: ElementRef, tag: String) -> NodeResult {
     }
     if tag == "style" {
         return get_style_res(element);
+    }
+    if tag == "video" {
+        attributes.extend(get_source_element(element));
     }
     let mut tag_component: HTMLTagComponent = HTMLTagComponent::new(tag, attributes);
 
